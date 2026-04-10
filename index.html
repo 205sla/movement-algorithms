@@ -1,0 +1,1687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>게임 AI 이동 알고리즘 인터랙티브 시각화 | Movement Algorithms Visualization</title>
+<meta name="description" content="게임 AI Movement 알고리즘 16개를 인터랙티브로 시각화. Kinematic Seek/Flee/Arrive/Wander, Steering Behavior(Arrive, Align, Velocity Matching), Delegated(Pursue, Evade, Face, Path Following, Collision/Obstacle Avoidance), Flocking, Blending/Arbitration. AI for Games 교재 기반.">
+<meta name="keywords" content="게임 AI, Movement Algorithm, Steering Behavior, Kinematic, Seek, Flee, Arrive, Align, Pursue, Evade, Flocking, Boids, Path Following, Obstacle Avoidance, Collision Avoidance, Blending, Arbitration, AI for Games, Ian Millington, 인공지능, 이동 알고리즘, 시각화">
+<meta name="author" content="경희대학교 인공지능 수업">
+<meta name="robots" content="index, follow">
+<link rel="canonical" href="https://movement-algorithms.205.kr/">
+
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="게임 AI 이동 알고리즘 인터랙티브 시각화">
+<meta property="og:description" content="Kinematic, Steering, Delegated, Flocking 등 게임 AI Movement 알고리즘 16개를 캔버스 기반으로 인터랙티브 시각화. 의사코드와 교수 설명 포함.">
+<meta property="og:url" content="https://movement-algorithms.205.kr/">
+<meta property="og:locale" content="ko_KR">
+<meta property="og:site_name" content="Game AI Movement Algorithms">
+
+<!-- Twitter Card -->
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="게임 AI 이동 알고리즘 인터랙티브 시각화">
+<meta name="twitter:description" content="Seek, Flee, Arrive, Pursue, Flocking 등 16개 Movement 알고리즘을 브라우저에서 직접 체험.">
+
+<!-- Structured Data -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "LearningResource",
+  "name": "게임 AI 이동 알고리즘 인터랙티브 시각화",
+  "description": "AI for Games 교재 Chapter 5 Movement 기반, 16개 이동 알고리즘을 인터랙티브 캔버스로 시각화한 학습 도구",
+  "url": "https://movement-algorithms.205.kr/",
+  "inLanguage": "ko",
+  "learningResourceType": "Interactive Simulation",
+  "educationalLevel": "University",
+  "teaches": ["Game AI", "Movement Algorithms", "Steering Behaviors", "Flocking", "Path Following"],
+  "isBasedOn": {
+    "@type": "Book",
+    "name": "AI for Games",
+    "author": "Ian Millington",
+    "bookEdition": "3rd Edition"
+  }
+}
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Segoe UI','Malgun Gothic',sans-serif;background:#0f0f1a;color:#ccc;display:flex;height:100vh;overflow:hidden}
+#sidebar{width:260px;background:#161625;border-right:1px solid #2a2a4a;overflow-y:auto;flex-shrink:0}
+#sidebar h2{padding:16px 18px 8px;color:#00d4ff;font-size:14px;text-transform:uppercase;letter-spacing:1px}
+#sidebar .group{margin-bottom:4px}
+#sidebar .group-title{padding:10px 18px 4px;color:#888;font-size:11px;text-transform:uppercase;letter-spacing:1px}
+#sidebar button{display:block;width:100%;text-align:left;padding:9px 18px 9px 28px;background:none;border:none;color:#aaa;font-size:13px;cursor:pointer;transition:all .15s}
+#sidebar button:hover{background:#1e1e35;color:#fff}
+#sidebar button.active{background:#1a1a3e;color:#00d4ff;border-left:3px solid #00d4ff;padding-left:25px}
+#main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+#header{padding:14px 24px;background:#13132a;border-bottom:1px solid #2a2a4a;display:flex;align-items:center;gap:16px;flex-shrink:0}
+#header h1{font-size:16px;color:#fff}
+#header .tag{background:#00d4ff22;color:#00d4ff;padding:2px 10px;border-radius:10px;font-size:11px}
+#mid-area{display:flex;flex:1;overflow:hidden;min-height:0}
+#canvas-wrap{flex:1;display:flex;justify-content:center;align-items:center;padding:12px;position:relative;min-width:0}
+canvas{background:#0a0a18;border-radius:10px;border:1px solid #2a2a4a;display:block;max-width:100%;max-height:100%}
+#info-bar{padding:10px 24px;background:#13132a;border-top:1px solid #2a2a4a;display:flex;gap:24px;align-items:center;flex-shrink:0;flex-wrap:wrap;min-height:48px}
+#info-bar .desc{font-size:12px;color:#aaa;flex:1;line-height:1.5}
+#info-bar .desc b{color:#00d4ff}
+#controls{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+#controls button{padding:6px 14px;background:#1e1e35;border:1px solid #3a3a5a;color:#ccc;border-radius:6px;cursor:pointer;font-size:12px;transition:all .15s}
+#controls button:hover{background:#2a2a4a;color:#fff}
+#controls button.on{background:#00d4ff33;border-color:#00d4ff;color:#00d4ff}
+#overlay{position:absolute;top:24px;left:24px;background:#0008;padding:8px 12px;border-radius:6px;font-size:12px;pointer-events:none;line-height:1.6}
+#overlay span{color:#00d4ff}
+#detail{width:340px;flex-shrink:0;overflow-y:auto;padding:18px;background:#0d0d1e;border-left:1px solid #2a2a4a;transition:width .25s,padding .25s,opacity .2s;opacity:1}
+#detail.closed{width:0;padding:0;opacity:0;overflow:hidden;border-left:none}
+#toggle-detail{position:absolute;right:8px;top:50%;transform:translateY(-50%);width:24px;height:48px;background:#1a1a3e;border:1px solid #2a2a4a;border-radius:6px 0 0 6px;color:#00d4ff;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;z-index:5}
+#toggle-detail:hover{background:#252550}
+#detail h3{color:#00d4ff;font-size:14px;margin:0 0 10px;padding-bottom:8px;border-bottom:1px solid #1e1e35}
+#detail .etag{display:inline-block;background:#ff884422;color:#ff8844;padding:1px 8px;border-radius:8px;font-size:10px;margin-bottom:8px}
+#detail p{font-size:12.5px;line-height:1.7;color:#aaa;margin:0 0 10px}
+#detail .fm{background:#13132e;padding:8px 12px;border-radius:6px;font-family:'Consolas','Courier New',monospace;font-size:11px;color:#ddd;margin:8px 0;overflow-x:auto;white-space:pre;line-height:1.5}
+#detail .qt{border-left:3px solid #00d4ff33;padding:6px 12px;margin:8px 0;font-size:11.5px;color:#888;font-style:italic;line-height:1.6}
+#detail .kp{background:#00d4ff08;border:1px solid #00d4ff22;padding:8px 12px;border-radius:6px;margin:8px 0;font-size:12px;color:#aaa;line-height:1.6}
+#detail .kp b{color:#00d4ff}
+#detail .warn{background:#ff444408;border:1px solid #ff444422;padding:8px 12px;border-radius:6px;margin:8px 0;font-size:12px;color:#caa;line-height:1.6}
+#detail .sub{color:#888;font-size:11px;margin:12px 0 4px;text-transform:uppercase;letter-spacing:0.5px}
+</style>
+</head>
+<body>
+
+<div id="sidebar">
+  <h2>Movement Algorithms</h2>
+  <div class="group">
+    <div class="group-title">Kinematic</div>
+    <button data-demo="kSeek" class="active">Seek & Flee</button>
+    <button data-demo="kArrive">Arrive</button>
+    <button data-demo="kWander">Wander</button>
+  </div>
+  <div class="group">
+    <div class="group-title">Steering — Fundamental</div>
+    <button data-demo="sSeek">Seek (Orbiting)</button>
+    <button data-demo="sArrive">Arrive (Two Radii)</button>
+    <button data-demo="sAlign">Align</button>
+    <button data-demo="velMatch">Velocity Matching</button>
+  </div>
+  <div class="group">
+    <div class="group-title">Steering — Delegated</div>
+    <button data-demo="pursue">Pursue & Evade</button>
+    <button data-demo="faceLook">Face & LookWhereYoureGoing</button>
+    <button data-demo="sWander">Wander (Circle)</button>
+    <button data-demo="pathFollow">Path Following</button>
+    <button data-demo="collisionAvoid">Collision Avoidance</button>
+    <button data-demo="obstacle">Obstacle Avoidance</button>
+  </div>
+  <div class="group">
+    <div class="group-title">Combining</div>
+    <button data-demo="flocking">Flocking</button>
+    <button data-demo="blendProblems">Blending Problems</button>
+  </div>
+</div>
+
+<div id="main">
+  <div id="header">
+    <h1 id="demo-title">Kinematic Seek & Flee</h1>
+    <span class="tag" id="demo-tag">Kinematic</span>
+  </div>
+  <div id="mid-area">
+    <div id="canvas-wrap">
+      <canvas id="c" width="900" height="560"></canvas>
+      <div id="overlay"></div>
+    </div>
+    <button id="toggle-detail" title="설명 패널 열기/닫기">◀</button>
+    <div id="detail"></div>
+  </div>
+  <div id="info-bar">
+    <div class="desc" id="desc"></div>
+    <div id="controls"></div>
+  </div>
+</div>
+
+<script>
+// ===== Vec2 =====
+class V {
+  constructor(x=0,y=0){this.x=x;this.y=y}
+  add(v){return new V(this.x+v.x,this.y+v.y)}
+  sub(v){return new V(this.x-v.x,this.y-v.y)}
+  mul(s){return new V(this.x*s,this.y*s)}
+  div(s){return s!==0?new V(this.x/s,this.y/s):new V()}
+  len(){return Math.hypot(this.x,this.y)}
+  lenSq(){return this.x*this.x+this.y*this.y}
+  norm(){const l=this.len();return l>1e-6?this.div(l):new V()}
+  dot(v){return this.x*v.x+this.y*v.y}
+  clone(){return new V(this.x,this.y)}
+  rot(a){const c=Math.cos(a),s=Math.sin(a);return new V(this.x*c-this.y*s,this.x*s+this.y*c)}
+  static fromAngle(a){return new V(Math.cos(a),Math.sin(a))}
+  static rand(w,h){return new V(Math.random()*w,Math.random()*h)}
+  static dist(a,b){return a.sub(b).len()}
+}
+
+// ===== Drawing Helpers =====
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = canvas.width, H = canvas.height;
+
+function drawAgent(pos,ori,color='#00d4ff',size=12){
+  ctx.save();ctx.translate(pos.x,pos.y);ctx.rotate(ori);
+  ctx.beginPath();ctx.moveTo(size,0);ctx.lineTo(-size*.65,-size*.6);ctx.lineTo(-size*.3,0);ctx.lineTo(-size*.65,size*.6);ctx.closePath();
+  ctx.fillStyle=color;ctx.globalAlpha=1;ctx.fill();
+  ctx.globalAlpha=0.5;ctx.strokeStyle=color;ctx.lineWidth=1;ctx.stroke();
+  ctx.globalAlpha=1;ctx.restore();
+}
+
+function drawArrow(from,to,color='#00ff88',w=1.5){
+  const d=to.sub(from);const l=d.len();if(l<2)return;
+  const a=Math.atan2(d.y,d.x);
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=w;ctx.setLineDash([]);
+  ctx.beginPath();ctx.moveTo(from.x,from.y);ctx.lineTo(to.x,to.y);ctx.stroke();
+  ctx.translate(to.x,to.y);ctx.rotate(a);ctx.fillStyle=color;
+  ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(-7,-3.5);ctx.lineTo(-7,3.5);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+
+function drawCircleDashed(cx,cy,r,color,dashLen=6){
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=1;ctx.setLineDash([dashLen,dashLen]);
+  ctx.beginPath();ctx.arc(cx,cy,r,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);ctx.restore();
+}
+
+function drawTarget(pos,color='#ff4466'){
+  ctx.beginPath();ctx.arc(pos.x,pos.y,6,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+  ctx.beginPath();ctx.arc(pos.x,pos.y,10,0,Math.PI*2);ctx.strokeStyle=color+'88';ctx.lineWidth=1;ctx.stroke();
+}
+
+function drawPath(points,color='#ffffff44'){
+  if(points.length<2)return;
+  ctx.save();ctx.strokeStyle=color;ctx.lineWidth=2;ctx.setLineDash([8,4]);
+  ctx.beginPath();ctx.moveTo(points[0].x,points[0].y);
+  for(let i=1;i<points.length;i++)ctx.lineTo(points[i].x,points[i].y);
+  ctx.stroke();ctx.setLineDash([]);ctx.restore();
+}
+
+function drawRect(x,y,w,h,color='#3a3a5a'){
+  ctx.fillStyle=color;ctx.fillRect(x,y,w,h);
+  ctx.strokeStyle='#5a5a7a';ctx.lineWidth=1;ctx.strokeRect(x,y,w,h);
+}
+
+function wrapPos(p){
+  const m=30;
+  if(p.x<-m)p.x=W+m;if(p.x>W+m)p.x=-m;
+  if(p.y<-m)p.y=H+m;if(p.y>H+m)p.y=-m;
+}
+
+function clampPos(p,m=15){
+  p.x=Math.max(m,Math.min(W-m,p.x));
+  p.y=Math.max(m,Math.min(H-m,p.y));
+}
+
+function mapToRange(a){
+  while(a>Math.PI)a-=2*Math.PI;
+  while(a<-Math.PI)a+=2*Math.PI;
+  return a;
+}
+
+function randomBinomial(){return Math.random()-Math.random();}
+
+function drawLabel(x,y,text,color='#aaa'){
+  ctx.font='11px Segoe UI,sans-serif';ctx.fillStyle=color;ctx.fillText(text,x,y);
+}
+
+function drawTrail(trail,color='#00d4ff18',width=2){
+  if(trail.length<2)return;
+  ctx.strokeStyle=color;ctx.lineWidth=width;ctx.beginPath();
+  ctx.moveTo(trail[0].x,trail[0].y);
+  for(let i=1;i<trail.length;i++)ctx.lineTo(trail[i].x,trail[i].y);
+  ctx.stroke();
+}
+
+function drawGrid(){
+  ctx.strokeStyle='#ffffff08';ctx.lineWidth=1;
+  for(let x=0;x<W;x+=50){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();}
+  for(let y=0;y<H;y+=50){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+}
+
+// ===== Demos =====
+let currentDemo = null;
+let mouse = new V(W/2, H/2);
+let mouseDown = false;
+
+// --- 01. Kinematic Seek & Flee ---
+class DemoKSeek {
+  constructor(){
+    this.agent={pos:new V(W/2,H/2),ori:0,vel:new V()};
+    this.target=new V(W/2+150,H/2);
+    this.maxSpeed=200;
+    this.mode='seek';// 'seek' or 'flee'
+    this.trail=[];
+  }
+  get title(){return 'Kinematic Seek & Flee'}
+  get tag(){return 'Kinematic'}
+  get desc(){return '<b>Seek</b>: 타겟 방향으로 maxSpeed로 직선 이동. <b>Flee</b>: 반대 방향으로 도주. 항상 최대 속도 → <b>overshoot/진동</b> 발생. 캔버스 클릭으로 타겟 설정.'}
+  getControls(){return [{id:'mode',label:this.mode==='seek'?'Mode: Seek':'Mode: Flee',toggle:()=>{this.mode=this.mode==='seek'?'flee':'seek'}}]}
+  click(x,y){this.target=new V(x,y);this.trail=[];}
+  update(dt){
+    const a=this.agent;
+    let dir;
+    if(this.mode==='seek') dir=this.target.sub(a.pos);
+    else dir=a.pos.sub(this.target);
+    a.vel=dir.norm().mul(this.maxSpeed);
+    a.ori=Math.atan2(a.vel.y,a.vel.x);
+    a.pos=a.pos.add(a.vel.mul(dt));
+    wrapPos(a.pos);
+    this.trail.push(a.pos.clone());
+    if(this.trail.length>120)this.trail.shift();
+  }
+  draw(){
+    drawGrid();
+    drawTrail(this.trail,'#00d4ff22');
+    drawTarget(this.target, this.mode==='seek'?'#ff4466':'#44ff66');
+    const a=this.agent;
+    drawArrow(a.pos,a.pos.add(a.vel.mul(0.15)),'#00ff88');
+    drawAgent(a.pos,a.ori);
+    // Info
+    drawLabel(14,20,`velocity: ${a.vel.len().toFixed(0)} px/s`,'#00ff88');
+    drawLabel(14,36,`distance: ${V.dist(a.pos,this.target).toFixed(0)} px`);
+    drawLabel(14,52,`mode: ${this.mode.toUpperCase()}`,'#ffaa44');
+  }
+}
+
+// --- 02. Kinematic Arrive ---
+class DemoKArrive {
+  constructor(){
+    this.agent={pos:new V(150,H/2),ori:0,vel:new V()};
+    this.target=new V(W/2+150,H/2);
+    this.maxSpeed=250;
+    this.radius=40;
+    this.timeToTarget=0.25;
+    this.trail=[];
+    this.stopped=false;
+  }
+  get title(){return 'Kinematic Arrive'}
+  get tag(){return 'Kinematic'}
+  get desc(){return '<b>만족 반경(radius)</b> 안에 들어오면 정지. 거리에 비례하여 속도 감소 (알고리즘적 조정, 가속도 아님). 클릭으로 타겟 설정.'}
+  getControls(){return[]}
+  click(x,y){this.target=new V(x,y);this.trail=[];this.stopped=false;}
+  update(dt){
+    const a=this.agent;
+    const dir=this.target.sub(a.pos);
+    const dist=dir.len();
+    if(dist<this.radius){a.vel=new V();this.stopped=true;return;}
+    this.stopped=false;
+    a.vel=dir.div(this.timeToTarget);
+    if(a.vel.len()>this.maxSpeed)a.vel=a.vel.norm().mul(this.maxSpeed);
+    a.ori=Math.atan2(a.vel.y,a.vel.x);
+    a.pos=a.pos.add(a.vel.mul(dt));
+    this.trail.push(a.pos.clone());
+    if(this.trail.length>200)this.trail.shift();
+  }
+  draw(){
+    drawGrid();
+    drawTrail(this.trail);
+    drawCircleDashed(this.target.x,this.target.y,this.radius,'#ffcc00',4);
+    drawLabel(this.target.x+this.radius+6,this.target.y+4,`radius=${this.radius}`,'#ffcc00');
+    drawTarget(this.target);
+    const a=this.agent;
+    if(a.vel.len()>1) drawArrow(a.pos,a.pos.add(a.vel.mul(0.15)),'#00ff88');
+    drawAgent(a.pos,a.ori);
+    // Speed bar
+    const spd=a.vel.len();const pct=spd/this.maxSpeed;
+    const bx=W-160,by=20,bw=140,bh=14;
+    ctx.fillStyle='#222';ctx.fillRect(bx,by,bw,bh);
+    ctx.fillStyle=this.stopped?'#ff4466':'#00ff88';ctx.fillRect(bx,by,bw*pct,bh);
+    ctx.strokeStyle='#444';ctx.strokeRect(bx,by,bw,bh);
+    drawLabel(bx,by-4,`speed: ${spd.toFixed(0)} / ${this.maxSpeed}`,'#aaa');
+    drawLabel(14,20,`distance: ${V.dist(a.pos,this.target).toFixed(0)}`);
+    if(this.stopped) drawLabel(14,36,'STOPPED (in radius)','#ff4466');
+  }
+}
+
+// --- 03. Kinematic Wander ---
+class DemoKWander {
+  constructor(){this.reset();}
+  reset(){
+    this.agents=[];
+    for(let i=0;i<8;i++){
+      this.agents.push({
+        pos:V.rand(W,H),ori:Math.random()*Math.PI*2,
+        vel:new V(),maxSpeed:60+Math.random()*80,
+        color:`hsl(${Math.random()*360},70%,65%)`,trail:[]
+      });
+    }
+    this.maxRotation=Math.PI*1.5;
+  }
+  get title(){return 'Kinematic Wander'}
+  get tag(){return 'Kinematic'}
+  get desc(){return '현재 방향에서 <b>randomBinomial()</b>로 랜덤 회전을 더하며 최대 속도로 전진. 자연스러운 NPC 배회.'}
+  getControls(){return [{id:'reset',label:'Reset',toggle:()=>this.reset()}]}
+  click(){}
+  update(dt){
+    for(const a of this.agents){
+      a.vel=V.fromAngle(a.ori).mul(a.maxSpeed);
+      const rot=this.maxRotation*randomBinomial();
+      a.ori+=rot*dt;
+      a.pos=a.pos.add(a.vel.mul(dt));
+      wrapPos(a.pos);
+      a.trail.push(a.pos.clone());
+      if(a.trail.length>80)a.trail.shift();
+    }
+  }
+  draw(){
+    drawGrid();
+    for(const a of this.agents){
+      drawTrail(a.trail,a.color+'30',1.5);
+      drawAgent(a.pos,a.ori,a.color,10);
+    }
+    drawLabel(14,20,`agents: ${this.agents.length}  |  maxRotation: ${(this.maxRotation*180/Math.PI).toFixed(0)}deg/s`);
+  }
+}
+
+// --- 04. Steering Seek (Orbiting) ---
+class DemoSSeek {
+  constructor(){
+    this.agent={pos:new V(200,H/2),ori:0,vel:new V(0,-80),rot:0};
+    this.target=new V(W/2,H/2);
+    this.maxAccel=120;
+    this.maxSpeed=180;
+    this.drag=0;// 0 or 0.5~2
+    this.trail=[];
+  }
+  get title(){return 'Steering Seek — Orbiting Problem'}
+  get tag(){return 'Steering'}
+  get desc(){return '<b>Drag=0</b>: 기존 속도가 소멸되지 않아 타겟 주위를 <b>궤도 선회(orbit)</b>. <b>Drag ON</b>: 마찰로 나선형 수렴하여 도달. 클릭으로 타겟 설정.'}
+  getControls(){return[{id:'drag',label:this.drag>0?'Drag: ON':'Drag: OFF',on:this.drag>0,toggle:()=>{this.drag=this.drag>0?0:1.2;this.trail=[];this.agent.vel=new V(0,-80);this.agent.pos=new V(200,H/2)}}]}
+  click(x,y){this.target=new V(x,y);this.trail=[];}
+  update(dt){
+    const a=this.agent;
+    let dir=this.target.sub(a.pos);
+    let accel=dir.norm().mul(this.maxAccel);
+    // Apply drag
+    if(this.drag>0){
+      const dragForce=a.vel.mul(-this.drag);
+      accel=accel.add(dragForce);
+    }
+    a.vel=a.vel.add(accel.mul(dt));
+    if(a.vel.len()>this.maxSpeed)a.vel=a.vel.norm().mul(this.maxSpeed);
+    a.pos=a.pos.add(a.vel.mul(dt));
+    a.ori=Math.atan2(a.vel.y,a.vel.x);
+    wrapPos(a.pos);
+    this.trail.push(a.pos.clone());
+    if(this.trail.length>500)this.trail.shift();
+  }
+  draw(){
+    drawGrid();
+    if(this.trail.length>1){
+      for(let i=1;i<this.trail.length;i++){
+        const alpha=i/this.trail.length;
+        ctx.strokeStyle=`rgba(0,212,255,${alpha*0.4})`;ctx.lineWidth=1.5;
+        ctx.beginPath();ctx.moveTo(this.trail[i-1].x,this.trail[i-1].y);
+        ctx.lineTo(this.trail[i].x,this.trail[i].y);ctx.stroke();
+      }
+    }
+    drawTarget(this.target);
+    const a=this.agent;
+    // Acceleration arrow
+    const accDir=this.target.sub(a.pos).norm().mul(this.maxAccel);
+    drawArrow(a.pos,a.pos.add(accDir.mul(0.2)),'#ff884488',1);
+    // Velocity arrow
+    drawArrow(a.pos,a.pos.add(a.vel.mul(0.2)),'#00ff88');
+    drawAgent(a.pos,a.ori);
+    drawLabel(14,20,`velocity: ${a.vel.len().toFixed(0)}  |  drag: ${this.drag.toFixed(1)}`,'#00ff88');
+    drawLabel(14,36,this.drag>0?'Spiral convergence (with drag)':'Orbiting (no drag)','#ffaa44');
+  }
+}
+
+// --- 05. Steering Arrive (Two Radii) ---
+class DemoSArrive {
+  constructor(){
+    this.agent={pos:new V(100,H/2),ori:0,vel:new V(),rot:0};
+    this.target=new V(W/2+150,H/2);
+    this.maxAccel=300;
+    this.maxSpeed=250;
+    this.targetRadius=20;
+    this.slowRadius=150;
+    this.timeToTarget=0.1;
+    this.trail=[];
+    this.stopped=false;
+  }
+  get title(){return 'Steering Arrive — Two Radii'}
+  get tag(){return 'Steering'}
+  get desc(){return '<b>targetRadius</b> (초록): 정지. <b>slowRadius</b> (노란): 감속 시작. 사이 영역에서 <b>보간 감속</b>: speed = maxSpeed × (distance/slowRadius). 클릭으로 타겟 설정.'}
+  getControls(){return[]}
+  click(x,y){this.target=new V(x,y);this.trail=[];this.agent.vel=new V();this.stopped=false;}
+  update(dt){
+    const a=this.agent;
+    const dir=this.target.sub(a.pos);
+    const dist=dir.len();
+    if(dist<this.targetRadius){a.vel=a.vel.mul(0.9);this.stopped=true;return;}
+    this.stopped=false;
+    let targetSpeed;
+    if(dist>this.slowRadius) targetSpeed=this.maxSpeed;
+    else targetSpeed=this.maxSpeed*(dist/this.slowRadius);
+    const targetVel=dir.norm().mul(targetSpeed);
+    let linear=targetVel.sub(a.vel).div(this.timeToTarget);
+    if(linear.len()>this.maxAccel) linear=linear.norm().mul(this.maxAccel);
+    a.vel=a.vel.add(linear.mul(dt));
+    if(a.vel.len()>this.maxSpeed)a.vel=a.vel.norm().mul(this.maxSpeed);
+    a.pos=a.pos.add(a.vel.mul(dt));
+    a.ori=Math.atan2(a.vel.y,a.vel.x);
+    clampPos(a.pos);
+    this.trail.push(a.pos.clone());
+    if(this.trail.length>200)this.trail.shift();
+  }
+  draw(){
+    drawGrid();
+    // Slow radius fill
+    ctx.fillStyle='#ffcc0008';ctx.beginPath();ctx.arc(this.target.x,this.target.y,this.slowRadius,0,Math.PI*2);ctx.fill();
+    // Target radius fill
+    ctx.fillStyle='#00ff8810';ctx.beginPath();ctx.arc(this.target.x,this.target.y,this.targetRadius,0,Math.PI*2);ctx.fill();
+    drawCircleDashed(this.target.x,this.target.y,this.slowRadius,'#ffcc00',6);
+    drawCircleDashed(this.target.x,this.target.y,this.targetRadius,'#00ff88',4);
+    drawLabel(this.target.x+this.slowRadius+6,this.target.y-4,'slowRadius','#ffcc00');
+    drawLabel(this.target.x+this.targetRadius+6,this.target.y+14,'targetRadius','#00ff88');
+    drawTrail(this.trail);
+    drawTarget(this.target);
+    const a=this.agent;
+    if(a.vel.len()>1)drawArrow(a.pos,a.pos.add(a.vel.mul(0.15)),'#00ff88');
+    drawAgent(a.pos,a.ori);
+    const spd=a.vel.len();
+    const dist=V.dist(a.pos,this.target);
+    // Speed bar
+    const bx=W-160,by=20,bw=140,bh=14;
+    ctx.fillStyle='#222';ctx.fillRect(bx,by,bw,bh);
+    let barColor='#00ff88';
+    if(dist<this.slowRadius&&dist>=this.targetRadius)barColor='#ffcc00';
+    if(dist<this.targetRadius)barColor='#ff4466';
+    ctx.fillStyle=barColor;ctx.fillRect(bx,by,bw*(spd/this.maxSpeed),bh);
+    ctx.strokeStyle='#444';ctx.strokeRect(bx,by,bw,bh);
+    drawLabel(bx,by-4,`speed: ${spd.toFixed(0)} / ${this.maxSpeed}`);
+    let zone='FULL SPEED (outside slowRadius)';
+    if(dist<this.slowRadius&&dist>=this.targetRadius)zone='DECELERATING (between radii)';
+    if(dist<this.targetRadius)zone='STOPPED (inside targetRadius)';
+    drawLabel(14,20,`distance: ${dist.toFixed(0)}  |  ${zone}`,barColor);
+  }
+}
+
+// --- 06. Align ---
+class DemoSAlign {
+  constructor(){
+    this.agent={pos:new V(W/2,H/2),ori:0,rot:0};
+    this.targetOri=Math.PI/2;
+    this.maxAngAccel=Math.PI*4;
+    this.maxRot=Math.PI*2;
+    this.targetRadius=0.05;
+    this.slowRadius=Math.PI/2;
+    this.timeToTarget=0.1;
+    this.trail=[];
+  }
+  get title(){return 'Align'}
+  get tag(){return 'Steering'}
+  get desc(){return '캐릭터의 <b>orientation</b>을 타겟 방향으로 회전. <b>mapToRange</b>로 최단 경로 결정. 빨간 선=타겟 방향. 클릭한 위치 방향으로 정렬.'}
+  getControls(){return[]}
+  click(x,y){
+    const dir=new V(x,y).sub(this.agent.pos);
+    this.targetOri=Math.atan2(dir.y,dir.x);
+    this.trail=[];
+  }
+  update(dt){
+    const a=this.agent;
+    let rotation=mapToRange(this.targetOri-a.ori);
+    const rotSize=Math.abs(rotation);
+    if(rotSize<this.targetRadius){a.rot=0;return;}
+    let targetRot;
+    if(rotSize>this.slowRadius)targetRot=this.maxRot;
+    else targetRot=this.maxRot*(rotSize/this.slowRadius);
+    targetRot*=Math.sign(rotation);
+    let angular=(targetRot-a.rot)/this.timeToTarget;
+    if(Math.abs(angular)>this.maxAngAccel)angular=Math.sign(angular)*this.maxAngAccel;
+    a.rot+=angular*dt;
+    a.ori+=a.rot*dt;
+    this.trail.push({ori:a.ori,t:performance.now()});
+    if(this.trail.length>100)this.trail.shift();
+  }
+  draw(){
+    drawGrid();
+    const a=this.agent;
+    const r=120;
+    // Slow radius arc
+    ctx.strokeStyle='#ffcc0033';ctx.lineWidth=20;
+    ctx.beginPath();ctx.arc(a.pos.x,a.pos.y,r,a.ori-this.slowRadius,a.ori+this.slowRadius);ctx.stroke();
+    // Target direction line
+    const te=a.pos.add(V.fromAngle(this.targetOri).mul(r+40));
+    ctx.strokeStyle='#ff446688';ctx.lineWidth=2;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(a.pos.x,a.pos.y);ctx.lineTo(te.x,te.y);ctx.stroke();ctx.setLineDash([]);
+    drawLabel(te.x+8,te.y,'target','#ff4466');
+    // Current direction line
+    const ce=a.pos.add(V.fromAngle(a.ori).mul(r+40));
+    ctx.strokeStyle='#00d4ff88';ctx.lineWidth=2;
+    ctx.beginPath();ctx.moveTo(a.pos.x,a.pos.y);ctx.lineTo(ce.x,ce.y);ctx.stroke();
+    // Rotation arc showing which direction to turn
+    const diff=mapToRange(this.targetOri-a.ori);
+    if(Math.abs(diff)>0.05){
+      ctx.strokeStyle=diff>0?'#00ff8844':'#ff884444';ctx.lineWidth=3;
+      ctx.beginPath();
+      if(diff>0)ctx.arc(a.pos.x,a.pos.y,r-15,a.ori,a.ori+diff);
+      else ctx.arc(a.pos.x,a.pos.y,r-15,a.ori+diff,a.ori);
+      ctx.stroke();
+      // Arrow at end
+      const endAngle=diff>0?a.ori+diff:a.ori+diff;
+      const arrowPos=a.pos.add(V.fromAngle(endAngle).mul(r-15));
+      ctx.fillStyle=diff>0?'#00ff88':'#ff8844';
+      ctx.beginPath();ctx.arc(arrowPos.x,arrowPos.y,4,0,Math.PI*2);ctx.fill();
+    }
+    drawAgent(a.pos,a.ori,'#00d4ff',18);
+    const degDiff=(diff*180/Math.PI).toFixed(1);
+    const degOri=(mapToRange(a.ori)*180/Math.PI).toFixed(1);
+    const degTgt=(this.targetOri*180/Math.PI).toFixed(1);
+    drawLabel(14,20,`current: ${degOri}°  |  target: ${degTgt}°  |  diff: ${degDiff}°`);
+    drawLabel(14,36,`rotation: ${diff>0?'Clockwise':'Counter-clockwise'} (shortest path via mapToRange)`,diff>0?'#00ff88':'#ff8844');
+  }
+}
+
+// --- 07. Velocity Matching ---
+class DemoVelocityMatch {
+  constructor(){
+    this.leader={pos:new V(W/2,H/2),ori:0,vel:new V(),t:0};
+    this.follower={pos:new V(W/2,H/2+120),ori:0,vel:new V()};
+    this.maxAccel=200;this.maxSpeed=200;this.timeToTarget=0.1;
+    this.trailL=[];this.trailF=[];
+  }
+  get title(){return 'Velocity Matching'}
+  get tag(){return 'Steering'}
+  get desc(){return '타겟의 <b>속도(velocity)</b>를 매칭. 위치가 아니라 <b>속도를 일치</b>시킴. 빨간=리더, 파란=팔로워. <b>Flocking의 Alignment</b>에서 사용.'}
+  getControls(){return[]}
+  click(){}
+  update(dt){
+    this.leader.t+=dt;
+    const t=this.leader.t;
+    const vx=Math.cos(t*0.5)*130;
+    const vy=Math.cos(t*0.8)*Math.sin(t*0.5)*90;
+    this.leader.vel=new V(vx,vy);
+    this.leader.pos=this.leader.pos.add(this.leader.vel.mul(dt));
+    this.leader.ori=Math.atan2(this.leader.vel.y,this.leader.vel.x);
+    wrapPos(this.leader.pos);
+    const f=this.follower;
+    let linear=this.leader.vel.sub(f.vel).div(this.timeToTarget);
+    if(linear.len()>this.maxAccel)linear=linear.norm().mul(this.maxAccel);
+    f.vel=f.vel.add(linear.mul(dt));
+    if(f.vel.len()>this.maxSpeed)f.vel=f.vel.norm().mul(this.maxSpeed);
+    f.pos=f.pos.add(f.vel.mul(dt));
+    f.ori=Math.atan2(f.vel.y,f.vel.x);
+    wrapPos(f.pos);
+    this.trailL.push(this.leader.pos.clone());if(this.trailL.length>120)this.trailL.shift();
+    this.trailF.push(f.pos.clone());if(this.trailF.length>120)this.trailF.shift();
+  }
+  draw(){
+    drawGrid();
+    const drawT=(tr,col)=>{if(tr.length<2)return;ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.beginPath();
+      ctx.moveTo(tr[0].x,tr[0].y);for(let i=1;i<tr.length;i++)ctx.lineTo(tr[i].x,tr[i].y);ctx.stroke();};
+    drawT(this.trailL,'#ff446620');
+    drawT(this.trailF,'#00d4ff20');
+    drawArrow(this.leader.pos,this.leader.pos.add(this.leader.vel.mul(0.3)),'#ff446688',2);
+    drawArrow(this.follower.pos,this.follower.pos.add(this.follower.vel.mul(0.3)),'#00d4ff88',2);
+    drawAgent(this.leader.pos,this.leader.ori,'#ff4466',14);
+    drawAgent(this.follower.pos,this.follower.ori,'#00d4ff',12);
+    const diff=this.leader.vel.sub(this.follower.vel).len();
+    drawLabel(14,20,`Leader vel: (${this.leader.vel.x.toFixed(0)}, ${this.leader.vel.y.toFixed(0)})  |  Follower vel: (${this.follower.vel.x.toFixed(0)}, ${this.follower.vel.y.toFixed(0)})`);
+    drawLabel(14,36,`Velocity difference: ${diff.toFixed(1)}  |  accel = (target.vel - char.vel) / timeToTarget`,diff<20?'#00ff88':'#ffcc00');
+  }
+}
+
+// --- 08. Pursue & Evade ---
+class DemoPursue {
+  constructor(){
+    this.reset();
+  }
+  reset(){
+    this.prey={pos:new V(W/2,150),ori:0,vel:new V(100,0),t:0};
+    this.seeker={pos:new V(100,H-100),ori:0,vel:new V()};
+    this.pursuer={pos:new V(W-100,H-100),ori:0,vel:new V()};
+    this.evader={pos:new V(W/2,H-80),ori:0,vel:new V()};
+    this.maxAccel=180;this.maxSpeed=160;this.maxPrediction=1.5;
+    this.trailS=[];this.trailP=[];this.trailE=[];this.predictedPos=null;this.evadePredicted=null;
+    this.showEvade=false;
+  }
+  get title(){return 'Pursue & Evade'}
+  get tag(){return 'Delegated'}
+  get desc(){return '<b>Seek</b> (파랑): 현재 위치로 이동. <b>Pursue</b> (보라): 미래 위치 예측 → Seek 위임. <b>Evade</b> (초록): 미래 위치 예측 → Flee 위임. 노란 점=예측 위치.'}
+  getControls(){return[
+    {id:'evade',label:'Evade Agent',on:this.showEvade,toggle:()=>{this.showEvade=!this.showEvade}},
+    {id:'reset',label:'Reset',toggle:()=>this.reset()}
+  ]}
+  click(){}
+  update(dt){
+    this.prey.t+=dt;
+    const px=W/2+Math.sin(this.prey.t*0.7)*300;
+    const py=150+Math.sin(this.prey.t*1.1)*100;
+    const rawVel=new V(px-this.prey.pos.x,py-this.prey.pos.y).div(dt||0.016);
+    this.prey.vel=rawVel.len()>500?rawVel.norm().mul(500):rawVel;
+    this.prey.pos=new V(px,py);
+    this.prey.ori=Math.atan2(this.prey.vel.y,this.prey.vel.x);
+    // Seeker: simple seek
+    const s=this.seeker;
+    let sDir=this.prey.pos.sub(s.pos).norm().mul(this.maxAccel);
+    s.vel=s.vel.add(sDir.mul(dt));
+    if(s.vel.len()>this.maxSpeed)s.vel=s.vel.norm().mul(this.maxSpeed);
+    s.pos=s.pos.add(s.vel.mul(dt));
+    s.ori=Math.atan2(s.vel.y,s.vel.x);
+    clampPos(s.pos);
+    this.trailS.push(s.pos.clone());if(this.trailS.length>150)this.trailS.shift();
+    // Pursuer: predict → Seek
+    const p=this.pursuer;
+    const dir2=this.prey.pos.sub(p.pos);
+    const dist=dir2.len();
+    const speed=p.vel.len();
+    let prediction=this.maxPrediction;
+    if(speed>dist/this.maxPrediction)prediction=dist/(speed||1);
+    this.predictedPos=this.prey.pos.add(this.prey.vel.mul(prediction));
+    let pDir=this.predictedPos.sub(p.pos).norm().mul(this.maxAccel);
+    p.vel=p.vel.add(pDir.mul(dt));
+    if(p.vel.len()>this.maxSpeed)p.vel=p.vel.norm().mul(this.maxSpeed);
+    p.pos=p.pos.add(p.vel.mul(dt));
+    p.ori=Math.atan2(p.vel.y,p.vel.x);
+    clampPos(p.pos);
+    this.trailP.push(p.pos.clone());if(this.trailP.length>150)this.trailP.shift();
+    // Evader: predict prey position → Flee (opposite of Pursue)
+    if(this.showEvade){
+      const e=this.evader;
+      const eDir=this.prey.pos.sub(e.pos);
+      const eDist=eDir.len();
+      const eSpeed=e.vel.len();
+      let ePred=this.maxPrediction;
+      if(eSpeed>eDist/this.maxPrediction)ePred=eDist/(eSpeed||1);
+      this.evadePredicted=this.prey.pos.add(this.prey.vel.mul(ePred));
+      // Flee from predicted position
+      let eFleeDir=e.pos.sub(this.evadePredicted).norm().mul(this.maxAccel);
+      e.vel=e.vel.add(eFleeDir.mul(dt));
+      if(e.vel.len()>this.maxSpeed)e.vel=e.vel.norm().mul(this.maxSpeed);
+      e.pos=e.pos.add(e.vel.mul(dt));
+      e.ori=Math.atan2(e.vel.y,e.vel.x);
+      clampPos(e.pos);
+      this.trailE.push(e.pos.clone());if(this.trailE.length>150)this.trailE.shift();
+    }
+  }
+  draw(){
+    drawGrid();
+    const drawT=(tr,col)=>{if(tr.length<2)return;ctx.strokeStyle=col;ctx.lineWidth=1.5;ctx.beginPath();
+      ctx.moveTo(tr[0].x,tr[0].y);for(let i=1;i<tr.length;i++)ctx.lineTo(tr[i].x,tr[i].y);ctx.stroke();};
+    drawT(this.trailS,'#00d4ff20');
+    drawT(this.trailP,'#aa66ff20');
+    if(this.showEvade)drawT(this.trailE,'#44ff8820');
+    // Predicted pos
+    if(this.predictedPos){
+      ctx.beginPath();ctx.arc(this.predictedPos.x,this.predictedPos.y,6,0,Math.PI*2);
+      ctx.fillStyle='#ffcc0066';ctx.fill();
+      ctx.setLineDash([4,4]);ctx.strokeStyle='#ffcc0044';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(this.prey.pos.x,this.prey.pos.y);
+      ctx.lineTo(this.predictedPos.x,this.predictedPos.y);ctx.stroke();ctx.setLineDash([]);
+    }
+    // Lines to target
+    ctx.strokeStyle='#00d4ff22';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(this.seeker.pos.x,this.seeker.pos.y);ctx.lineTo(this.prey.pos.x,this.prey.pos.y);ctx.stroke();
+    ctx.strokeStyle='#aa66ff22';
+    ctx.beginPath();ctx.moveTo(this.pursuer.pos.x,this.pursuer.pos.y);ctx.lineTo(this.predictedPos?this.predictedPos.x:this.prey.pos.x,this.predictedPos?this.predictedPos.y:this.prey.pos.y);ctx.stroke();
+    ctx.setLineDash([]);
+    // Evade
+    if(this.showEvade&&this.evadePredicted){
+      ctx.strokeStyle='#44ff8822';ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.moveTo(this.evader.pos.x,this.evader.pos.y);
+      ctx.lineTo(this.evadePredicted.x,this.evadePredicted.y);ctx.stroke();ctx.setLineDash([]);
+      drawAgent(this.evader.pos,this.evader.ori,'#44ff88',12);
+      drawLabel(this.evader.pos.x+16,this.evader.pos.y-8,'Evade','#44ff88');
+    }
+    drawAgent(this.prey.pos,this.prey.ori,'#ff4466',14);
+    drawAgent(this.seeker.pos,this.seeker.ori,'#00d4ff',12);
+    drawAgent(this.pursuer.pos,this.pursuer.ori,'#aa66ff',12);
+    let info='Prey (red)  |  Seek (cyan)  |  Pursue (purple)';
+    if(this.showEvade)info+='  |  Evade (green): predicts → Flee';
+    drawLabel(14,20,info);
+    const ds=V.dist(this.seeker.pos,this.prey.pos).toFixed(0);
+    const dp=V.dist(this.pursuer.pos,this.prey.pos).toFixed(0);
+    drawLabel(14,36,`Seek dist: ${ds}  |  Pursue dist: ${dp}`,dp<ds?'#aa66ff':'#00d4ff');
+  }
+}
+
+// --- 09. Steering Wander (Circle) ---
+class DemoSWander {
+  constructor(){
+    this.agents=[];
+    for(let i=0;i<5;i++){
+      this.agents.push({
+        pos:V.rand(W,H),ori:Math.random()*Math.PI*2,vel:V.fromAngle(Math.random()*Math.PI*2).mul(50),
+        wanderAngle:Math.random()*Math.PI*2,
+        color:`hsl(${i*72},70%,65%)`,trail:[]
+      });
+    }
+    this.circleDistance=60;
+    this.circleRadius=40;
+    this.maxAccel=150;
+    this.maxSpeed=120;
+    this.angleChange=0.5;
+  }
+  get title(){return 'Steering Wander — Circle Method'}
+  get tag(){return 'Delegated'}
+  get desc(){return '캐릭터 전방에 <b>원(circle)</b>을 배치하고, 원 위의 랜덤 점을 타겟으로 → <b>Seek에 위임</b>. 원 크기로 랜덤성 조절. 큰 원(초록)=현재 설정.'}
+  getControls(){return[
+    {id:'big',label:'Big Circle',toggle:()=>{this.circleRadius=60;this.circleDistance=80}},
+    {id:'small',label:'Small Circle',toggle:()=>{this.circleRadius=20;this.circleDistance=40}}
+  ]}
+  click(){}
+  update(dt){
+    for(const a of this.agents){
+      a.wanderAngle+=randomBinomial()*this.angleChange*dt*60;
+      const circleCenter=a.pos.add(V.fromAngle(a.ori).mul(this.circleDistance));
+      const wanderPoint=circleCenter.add(V.fromAngle(a.wanderAngle).mul(this.circleRadius));
+      a._circleCenter=circleCenter;a._wanderPoint=wanderPoint;
+      let accel=wanderPoint.sub(a.pos).norm().mul(this.maxAccel);
+      a.vel=a.vel.add(accel.mul(dt));
+      if(a.vel.len()>this.maxSpeed)a.vel=a.vel.norm().mul(this.maxSpeed);
+      a.pos=a.pos.add(a.vel.mul(dt));
+      a.ori=Math.atan2(a.vel.y,a.vel.x);
+      wrapPos(a.pos);
+      a.trail.push(a.pos.clone());
+      if(a.trail.length>100)a.trail.shift();
+    }
+  }
+  draw(){
+    drawGrid();
+    for(const a of this.agents){
+      drawTrail(a.trail,a.color+'25',1.5);
+      // Circle
+      if(a._circleCenter){
+        drawCircleDashed(a._circleCenter.x,a._circleCenter.y,this.circleRadius,'#ffffff22',3);
+        // Wander point
+        ctx.beginPath();ctx.arc(a._wanderPoint.x,a._wanderPoint.y,4,0,Math.PI*2);
+        ctx.fillStyle='#ffcc0088';ctx.fill();
+        // Line to wander point
+        ctx.strokeStyle='#ffcc0033';ctx.lineWidth=1;
+        ctx.beginPath();ctx.moveTo(a.pos.x,a.pos.y);ctx.lineTo(a._wanderPoint.x,a._wanderPoint.y);ctx.stroke();
+      }
+      drawAgent(a.pos,a.ori,a.color,10);
+    }
+    drawLabel(14,20,`circleRadius: ${this.circleRadius}  |  circleDistance: ${this.circleDistance}`);
+  }
+}
+
+// --- 10. Face & LookWhereYoureGoing ---
+class DemoFaceLook {
+  constructor(){
+    this.faceTarget=new V(W/2,H/2);
+    this.t=0;this.circleR=100;
+    this.maxRot=Math.PI*3;this.maxAngAccel=Math.PI*6;
+    this.targetRadius=0.02;this.slowRadius=Math.PI/3;this.timeToTarget=0.1;
+    this.agent1={pos:new V(W/4,H/2),ori:0,rot:0}; // Face
+    this.agent2={pos:new V(3*W/4,H/2),ori:0,rot:0}; // LWYG
+  }
+  get title(){return 'Face & LookWhereYoureGoing'}
+  get tag(){return 'Delegated'}
+  get desc(){return '<b>Face</b> (왼쪽, 주황): 타겟 <b>위치(position)</b>를 향해 회전 → Align 위임. <b>LookWhereYoureGoing</b> (오른쪽, 파랑): <b>이동 방향(velocity)</b>으로 회전 → Align 위임. 클릭으로 Face 타겟 설정.'}
+  getControls(){return[]}
+  click(x,y){this.faceTarget=new V(x,y);}
+  alignStep(agent,targetOri,dt){
+    let rotation=mapToRange(targetOri-agent.ori);
+    const rotSize=Math.abs(rotation);
+    if(rotSize<this.targetRadius){agent.rot*=0.8;return;}
+    let targetRot;
+    if(rotSize>this.slowRadius)targetRot=this.maxRot;
+    else targetRot=this.maxRot*(rotSize/this.slowRadius);
+    targetRot*=Math.sign(rotation);
+    let angular=(targetRot-agent.rot)/this.timeToTarget;
+    if(Math.abs(angular)>this.maxAngAccel)angular=Math.sign(angular)*this.maxAngAccel;
+    agent.rot+=angular*dt;
+    agent.ori+=agent.rot*dt;
+  }
+  update(dt){
+    this.t+=dt;
+    const angle=this.t*0.8;
+    const cx1=W/4,cy1=H/2,cx2=3*W/4,cy2=H/2;
+    const np1=new V(cx1+Math.cos(angle)*this.circleR,cy1+Math.sin(angle)*this.circleR);
+    const np2=new V(cx2+Math.cos(angle)*this.circleR,cy2+Math.sin(angle)*this.circleR);
+    this.agent1._vel=np1.sub(this.agent1.pos).div(dt||0.016);
+    this.agent2._vel=np2.sub(this.agent2.pos).div(dt||0.016);
+    this.agent1.pos=np1;this.agent2.pos=np2;
+    // Face: position → orientation → Align
+    const faceDir=this.faceTarget.sub(this.agent1.pos);
+    if(faceDir.len()>1){
+      this.alignStep(this.agent1,Math.atan2(faceDir.y,faceDir.x),dt);
+    }
+    // LookWhereYoureGoing: velocity → orientation → Align
+    if(this.agent2._vel.len()>1){
+      this.alignStep(this.agent2,Math.atan2(this.agent2._vel.y,this.agent2._vel.x),dt);
+    }
+  }
+  draw(){
+    drawGrid();
+    // Divider
+    ctx.strokeStyle='#ffffff11';ctx.lineWidth=1;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(W/2,0);ctx.lineTo(W/2,H);ctx.stroke();ctx.setLineDash([]);
+    // Orbit paths
+    drawCircleDashed(W/4,H/2,this.circleR,'#ffffff12',4);
+    drawCircleDashed(3*W/4,H/2,this.circleR,'#ffffff12',4);
+    // Face target
+    drawTarget(this.faceTarget,'#ff4466');
+    ctx.strokeStyle='#ff446633';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+    ctx.beginPath();ctx.moveTo(this.agent1.pos.x,this.agent1.pos.y);
+    ctx.lineTo(this.faceTarget.x,this.faceTarget.y);ctx.stroke();ctx.setLineDash([]);
+    // Velocity arrow for LWYG
+    if(this.agent2._vel&&this.agent2._vel.len()>1){
+      const vn=this.agent2._vel.norm().mul(45);
+      drawArrow(this.agent2.pos,this.agent2.pos.add(vn),'#00ff8855',1.5);
+    }
+    drawAgent(this.agent1.pos,this.agent1.ori,'#ff8844',16);
+    drawAgent(this.agent2.pos,this.agent2.ori,'#44aaff',16);
+    // Labels
+    drawLabel(W/4-30,30,'FACE','#ff8844');
+    drawLabel(W/4-80,48,'Always looks at red target (position)','#777');
+    drawLabel(3*W/4-70,30,'LOOK WHERE YOU\'RE GOING','#44aaff');
+    drawLabel(3*W/4-80,48,'Looks in velocity direction','#777');
+  }
+}
+
+// --- 11. Path Following ---
+class DemoPathFollow {
+  constructor(){
+    this.path=[new V(80,H-80),new V(200,150),new V(400,H-120),new V(550,100),new V(700,H/2),new V(850,120)];
+    this.agent={pos:new V(80,H-80),ori:0,vel:new V()};
+    this.maxAccel=200;this.maxSpeed=160;
+    this.pathOffset=50;
+    this.mode='chase';// 'chase' or 'predictive'
+    this.trail=[];
+    this._nearestPt=null;this._targetPt=null;this._futurePt=null;
+  }
+  get title(){return 'Path Following'}
+  get tag(){return 'Delegated'}
+  get desc(){return '<b>Chase the Rabbit</b>: 경로상 최근접점에서 일정 거리 앞을 타겟. <b>Predictive</b>: 미래 위치에서 최근접점 계산. 노란 점=타겟, 초록 점=최근접점.'}
+  getControls(){return[
+    {id:'mode',label:this.mode==='chase'?'Mode: Chase the Rabbit':'Mode: Predictive',
+     toggle:()=>{this.mode=this.mode==='chase'?'predictive':'chase';this.trail=[];this.agent.pos=this.path[0].clone();this.agent.vel=new V()}},
+    {id:'reset',label:'Reset',toggle:()=>{this.trail=[];this.agent.pos=this.path[0].clone();this.agent.vel=new V()}}
+  ]}
+  click(){}
+  nearestOnSegment(p,a,b){
+    const ab=b.sub(a);const ap=p.sub(a);
+    const t=Math.max(0,Math.min(1,ap.dot(ab)/ab.lenSq()));
+    return{point:a.add(ab.mul(t)),t:t};
+  }
+  nearestOnPath(p){
+    let best=null,bestDist=Infinity,bestSeg=0,bestT=0;
+    for(let i=0;i<this.path.length-1;i++){
+      const r=this.nearestOnSegment(p,this.path[i],this.path[i+1]);
+      const d=V.dist(p,r.point);
+      if(d<bestDist){bestDist=d;best=r.point;bestSeg=i;bestT=r.t;}
+    }
+    return{point:best,seg:bestSeg,t:bestT,dist:bestDist};
+  }
+  getTargetAhead(seg,t,offset){
+    let remaining=offset;
+    let cp=this.path[seg].add(this.path[seg+1].sub(this.path[seg]).mul(t));
+    for(let i=seg;i<this.path.length-1;i++){
+      const end=this.path[i+1];
+      const toEnd=V.dist(cp,end);
+      if(remaining<=toEnd){return cp.add(end.sub(cp).norm().mul(remaining));}
+      remaining-=toEnd;cp=end;
+    }
+    return this.path[this.path.length-1].clone();
+  }
+  update(dt){
+    const a=this.agent;
+    let queryPoint=a.pos;
+    if(this.mode==='predictive'){
+      this._futurePt=a.pos.add(a.vel.mul(0.3));
+      queryPoint=this._futurePt;
+    }else{this._futurePt=null;}
+    const nearest=this.nearestOnPath(queryPoint);
+    this._nearestPt=nearest.point;
+    const target=this.getTargetAhead(nearest.seg,nearest.t,this.pathOffset);
+    this._targetPt=target;
+    const dir=target.sub(a.pos);
+    let accel=dir.norm().mul(this.maxAccel);
+    a.vel=a.vel.add(accel.mul(dt));
+    if(a.vel.len()>this.maxSpeed)a.vel=a.vel.norm().mul(this.maxSpeed);
+    a.pos=a.pos.add(a.vel.mul(dt));
+    a.ori=Math.atan2(a.vel.y,a.vel.x);
+    this.trail.push(a.pos.clone());
+    if(this.trail.length>300)this.trail.shift();
+  }
+  draw(){
+    drawGrid();
+    // Path
+    drawPath(this.path,'#ffffff55');
+    for(const p of this.path){
+      ctx.beginPath();ctx.arc(p.x,p.y,4,0,Math.PI*2);ctx.fillStyle='#ffffff44';ctx.fill();
+    }
+    drawTrail(this.trail);
+    // Nearest point
+    if(this._nearestPt){
+      ctx.beginPath();ctx.arc(this._nearestPt.x,this._nearestPt.y,5,0,Math.PI*2);
+      ctx.fillStyle='#00ff88';ctx.fill();
+    }
+    // Target point
+    if(this._targetPt){
+      ctx.beginPath();ctx.arc(this._targetPt.x,this._targetPt.y,6,0,Math.PI*2);
+      ctx.fillStyle='#ffcc00';ctx.fill();
+      drawLabel(this._targetPt.x+10,this._targetPt.y-6,'target','#ffcc00');
+    }
+    // Future point (predictive)
+    if(this._futurePt){
+      ctx.beginPath();ctx.arc(this._futurePt.x,this._futurePt.y,5,0,Math.PI*2);
+      ctx.fillStyle='#ff66aa66';ctx.fill();
+      ctx.setLineDash([3,3]);ctx.strokeStyle='#ff66aa44';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(this.agent.pos.x,this.agent.pos.y);
+      ctx.lineTo(this._futurePt.x,this._futurePt.y);ctx.stroke();ctx.setLineDash([]);
+      drawLabel(this._futurePt.x+10,this._futurePt.y,'future pos','#ff66aa');
+    }
+    const a=this.agent;
+    if(a.vel.len()>1)drawArrow(a.pos,a.pos.add(a.vel.mul(0.15)),'#00ff88');
+    drawAgent(a.pos,a.ori);
+    drawLabel(14,20,`mode: ${this.mode==='chase'?'Chase the Rabbit':'Predictive'}  |  pathOffset: ${this.pathOffset}`);
+  }
+}
+
+// --- 12. Obstacle Avoidance ---
+class DemoObstacle {
+  constructor(){
+    this.walls=[
+      {x:300,y:150,w:30,h:250},{x:500,y:100,w:30,h:200},
+      {x:150,y:350,w:200,h:25},{x:600,y:300,w:25,h:200},
+      {x:700,y:100,w:25,h:150}
+    ];
+    this.agent={pos:new V(80,H/2),ori:0,vel:V.fromAngle(0).mul(100)};
+    this.target=new V(W-80,H/2);
+    this.maxAccel=250;this.maxSpeed=140;
+    this.lookAhead=100;this.avoidDist=50;
+    this.trail=[];
+    this._rays=[];this._hitPt=null;this._avoidTarget=null;
+  }
+  get title(){return 'Obstacle Avoidance — Ray Casting'}
+  get tag(){return 'Delegated'}
+  get desc(){return '이동 방향으로 <b>레이(ray)</b>를 쏴서 벽 감지. 충돌 시 <b>법선(normal) × avoidDistance</b> 방향으로 회피 타겟 설정 → Seek 위임. 클릭으로 목표 설정.'}
+  getControls(){return[{id:'reset',label:'Reset',toggle:()=>{this.agent.pos=new V(80,H/2);this.agent.vel=V.fromAngle(0).mul(100);this.trail=[];}}]}
+  click(x,y){this.target=new V(x,y);this.trail=[];}
+  rayBoxIntersect(origin,dir,box){
+    const len=dir.len();if(len<1e-6)return null;
+    const d=dir.norm();
+    let tmin=-Infinity,tmax=Infinity;
+    // X slab
+    if(Math.abs(d.x)<1e-8){if(origin.x<box.x||origin.x>box.x+box.w)return null;}
+    else{let t1=(box.x-origin.x)/d.x,t2=(box.x+box.w-origin.x)/d.x;if(t1>t2)[t1,t2]=[t2,t1];tmin=Math.max(tmin,t1);tmax=Math.min(tmax,t2);}
+    // Y slab
+    if(Math.abs(d.y)<1e-8){if(origin.y<box.y||origin.y>box.y+box.h)return null;}
+    else{let t1=(box.y-origin.y)/d.y,t2=(box.y+box.h-origin.y)/d.y;if(t1>t2)[t1,t2]=[t2,t1];tmin=Math.max(tmin,t1);tmax=Math.min(tmax,t2);}
+    if(tmin>tmax||tmax<0||tmin>len)return null;
+    const t=tmin>0?tmin:tmax;if(t>len||t<0)return null;
+    const hitPt=origin.add(d.mul(t));
+    // Determine normal
+    let normal;
+    const cx=box.x+box.w/2,cy=box.y+box.h/2;
+    const dx=hitPt.x-cx,dy=hitPt.y-cy;
+    if(Math.abs(dx/(box.w/2))>Math.abs(dy/(box.h/2)))normal=new V(dx>0?1:-1,0);
+    else normal=new V(0,dy>0?1:-1);
+    return{point:hitPt,normal:normal,t:t};
+  }
+  castRay(origin,dir){
+    let closest=null;
+    for(const wall of this.walls){
+      const hit=this.rayBoxIntersect(origin,dir,wall);
+      if(hit&&(!closest||hit.t<closest.t))closest=hit;
+    }
+    return closest;
+  }
+  update(dt){
+    const a=this.agent;
+    // Seek toward target
+    let seekDir=this.target.sub(a.pos).norm().mul(this.maxAccel);
+    // Cast rays (whisker style: forward + two side)
+    const fwd=a.vel.len()>1?a.vel.norm():V.fromAngle(a.ori);
+    const rays=[
+      fwd.mul(this.lookAhead),
+      fwd.rot(-0.4).mul(this.lookAhead*0.6),
+      fwd.rot(0.4).mul(this.lookAhead*0.6)
+    ];
+    this._rays=rays.map(r=>({from:a.pos.clone(),to:a.pos.add(r)}));
+    this._hitPt=null;this._avoidTarget=null;
+    let bestHit=null;
+    for(const ray of rays){
+      const hit=this.castRay(a.pos,ray);
+      if(hit&&(!bestHit||hit.t<bestHit.t))bestHit=hit;
+    }
+    let accel;
+    if(bestHit){
+      this._hitPt=bestHit.point;
+      const avoidTarget=bestHit.point.add(bestHit.normal.mul(this.avoidDist));
+      this._avoidTarget=avoidTarget;
+      accel=avoidTarget.sub(a.pos).norm().mul(this.maxAccel*1.5);
+    }else{
+      accel=seekDir;
+    }
+    a.vel=a.vel.add(accel.mul(dt));
+    if(a.vel.len()>this.maxSpeed)a.vel=a.vel.norm().mul(this.maxSpeed);
+    a.pos=a.pos.add(a.vel.mul(dt));
+    a.ori=Math.atan2(a.vel.y,a.vel.x);
+    clampPos(a.pos);
+    this.trail.push(a.pos.clone());
+    if(this.trail.length>300)this.trail.shift();
+  }
+  draw(){
+    drawGrid();
+    // Walls
+    for(const w of this.walls)drawRect(w.x,w.y,w.w,w.h,'#3a3a5a');
+    drawTrail(this.trail,'#00d4ff15');
+    // Rays
+    for(const r of this._rays){
+      ctx.strokeStyle='#ff884444';ctx.lineWidth=1.5;
+      ctx.beginPath();ctx.moveTo(r.from.x,r.from.y);ctx.lineTo(r.to.x,r.to.y);ctx.stroke();
+    }
+    // Hit point
+    if(this._hitPt){
+      ctx.beginPath();ctx.arc(this._hitPt.x,this._hitPt.y,5,0,Math.PI*2);
+      ctx.fillStyle='#ff4466';ctx.fill();
+    }
+    // Avoid target
+    if(this._avoidTarget){
+      ctx.beginPath();ctx.arc(this._avoidTarget.x,this._avoidTarget.y,5,0,Math.PI*2);
+      ctx.fillStyle='#00ff88';ctx.fill();
+      ctx.setLineDash([3,3]);ctx.strokeStyle='#00ff8844';ctx.lineWidth=1;
+      ctx.beginPath();ctx.moveTo(this._hitPt.x,this._hitPt.y);
+      ctx.lineTo(this._avoidTarget.x,this._avoidTarget.y);ctx.stroke();ctx.setLineDash([]);
+      drawLabel(this._avoidTarget.x+8,this._avoidTarget.y-6,'avoid target','#00ff88');
+    }
+    drawTarget(this.target);
+    const a=this.agent;
+    if(a.vel.len()>1)drawArrow(a.pos,a.pos.add(a.vel.mul(0.15)),'#00ff88');
+    drawAgent(a.pos,a.ori);
+    drawLabel(14,20,`lookAhead: ${this.lookAhead}  |  avoidDistance: ${this.avoidDist}  |  rays: whisker (3)`);
+    drawLabel(14,36,this._hitPt?'AVOIDING obstacle':'Seeking target','#ffaa44');
+  }
+}
+
+// --- 13. Collision Avoidance (moving characters) ---
+class DemoCollisionAvoid {
+  constructor(){this.reset();}
+  reset(){
+    this.agents=[];
+    for(let i=0;i<14;i++){
+      const angle=(i/14)*Math.PI*2;
+      const r=Math.min(W,H)*0.35;
+      this.agents.push({
+        pos:new V(W/2+Math.cos(angle)*r,H/2+Math.sin(angle)*r),
+        ori:0,vel:new V(-Math.cos(angle)*70,-Math.sin(angle)*70),
+        color:`hsl(${i*26},65%,60%)`,_avoiding:false
+      });
+    }
+    this.maxAccel=280;this.maxSpeed=110;this.avoidRadius=70;this.showCones=true;
+  }
+  get title(){return 'Collision Avoidance — Moving Characters'}
+  get tag(){return 'Delegated'}
+  get desc(){return '움직이는 캐릭터 간 <b>충돌 회피</b>. <b>closest approach time</b>(가장 가까운 접근 시점)을 계산하여 회피. <b>원뿔(cone)</b> 탐지 영역. Obstacle Avoidance(정적 벽)와 다른 알고리즘.'}
+  getControls(){return[
+    {id:'cones',label:'Show Cones',on:this.showCones,toggle:()=>{this.showCones=!this.showCones}},
+    {id:'reset',label:'Reset',toggle:()=>this.reset()}
+  ]}
+  click(){}
+  update(dt){
+    for(const a of this.agents){
+      // Base: seek toward opposite side (through center)
+      const oppositePos=new V(W-a.pos.x,H-a.pos.y);
+      let seekAccel=oppositePos.sub(a.pos).norm().mul(this.maxAccel*0.3);
+      // Collision avoidance: find closest future collision
+      let avoidAccel=new V();let closestTime=Infinity;let closestAgent=null;let avoidDir=new V();
+      for(const other of this.agents){
+        if(other===a)continue;
+        const relPos=other.pos.sub(a.pos);
+        const relVel=other.vel.sub(a.vel);
+        const relSpeedSq=relVel.lenSq();
+        if(relSpeedSq<1)continue;
+        const t=-relPos.dot(relVel)/relSpeedSq;
+        if(t<0||t>2)continue;
+        const futureRelPos=relPos.add(relVel.mul(t));
+        const closestDist=futureRelPos.len();
+        if(closestDist<this.avoidRadius&&t<closestTime){
+          closestTime=t;closestAgent=other;
+          avoidDir=futureRelPos.mul(-1);
+        }
+      }
+      if(closestAgent){
+        if(avoidDir.len()<1)avoidDir=new V(randomBinomial(),randomBinomial());
+        avoidAccel=avoidDir.norm().mul(this.maxAccel);
+      }
+      a._avoiding=!!closestAgent;
+      const total=seekAccel.add(avoidAccel);
+      a.vel=a.vel.add(total.mul(dt));
+      if(a.vel.len()>this.maxSpeed)a.vel=a.vel.norm().mul(this.maxSpeed);
+      a.pos=a.pos.add(a.vel.mul(dt));
+      a.ori=Math.atan2(a.vel.y,a.vel.x);
+      if(a.pos.x<20||a.pos.x>W-20)a.vel.x*=-0.5;
+      if(a.pos.y<20||a.pos.y>H-20)a.vel.y*=-0.5;
+      clampPos(a.pos,20);
+    }
+  }
+  draw(){
+    drawGrid();
+    for(const a of this.agents){
+      if(this.showCones){
+        const fwd=a.vel.len()>1?a.vel.norm():V.fromAngle(a.ori);
+        ctx.save();ctx.translate(a.pos.x,a.pos.y);
+        ctx.rotate(Math.atan2(fwd.y,fwd.x));
+        ctx.beginPath();ctx.moveTo(0,0);
+        const cl=this.avoidRadius,ca=0.4;
+        ctx.lineTo(Math.cos(-ca)*cl,Math.sin(-ca)*cl);
+        ctx.lineTo(Math.cos(ca)*cl,Math.sin(ca)*cl);
+        ctx.closePath();
+        ctx.fillStyle=a._avoiding?'#ff446618':'#ffffff08';ctx.fill();ctx.restore();
+      }
+      drawAgent(a.pos,a.ori,a.color,9);
+      if(a._avoiding){
+        ctx.beginPath();ctx.arc(a.pos.x,a.pos.y,14,0,Math.PI*2);
+        ctx.strokeStyle='#ff446644';ctx.lineWidth=1;ctx.stroke();
+      }
+    }
+    const ac=this.agents.filter(a=>a._avoiding).length;
+    drawLabel(14,20,`agents: ${this.agents.length}  |  avoidRadius: ${this.avoidRadius}  |  currently avoiding: ${ac}`);
+    drawLabel(14,36,'Agents cross through center. Closest approach time calculated per pair. Red ring = avoiding.','#888');
+  }
+}
+
+// --- 14. Flocking ---
+class DemoFlocking {
+  constructor(){
+    this.boids=[];
+    for(let i=0;i<50;i++){
+      this.boids.push({
+        pos:V.rand(W,H),ori:Math.random()*Math.PI*2,
+        vel:V.fromAngle(Math.random()*Math.PI*2).mul(40+Math.random()*40)
+      });
+    }
+    this.maxSpeed=120;this.maxAccel=200;
+    this.sepRadius=35;this.cohRadius=120;this.aliRadius=80;
+    this.sepWeight=2.5;this.cohWeight=1.0;this.aliWeight=1.2;
+    this.sepOn=true;this.cohOn=true;this.aliOn=true;
+    this.showForces=true;
+  }
+  get title(){return 'Flocking — Separation + Cohesion + Alignment'}
+  get tag(){return 'Combining'}
+  get desc(){return '<b>Separation</b> (빨강): 가까운 개체로부터 멀어짐 (Flee). <b>Cohesion</b> (파랑): 그룹 중심으로 모임 (Seek). <b>Alignment</b> (초록): 평균 속도 매칭 (Velocity Match). 가중합(Blending)으로 조합.'}
+  getControls(){return[
+    {id:'sep',label:'Separation',on:this.sepOn,toggle:()=>{this.sepOn=!this.sepOn}},
+    {id:'coh',label:'Cohesion',on:this.cohOn,toggle:()=>{this.cohOn=!this.cohOn}},
+    {id:'ali',label:'Alignment',on:this.aliOn,toggle:()=>{this.aliOn=!this.aliOn}},
+    {id:'forces',label:'Show Forces',on:this.showForces,toggle:()=>{this.showForces=!this.showForces}}
+  ]}
+  click(){}
+  update(dt){
+    for(const b of this.boids){
+      let sepForce=new V(),cohForce=new V(),aliForce=new V();
+      let sepCount=0,cohCount=0,aliCount=0;
+      for(const other of this.boids){
+        if(other===b)continue;
+        const d=V.dist(b.pos,other.pos);
+        if(d<this.sepRadius&&d>0){
+          sepForce=sepForce.add(b.pos.sub(other.pos).div(d));sepCount++;
+        }
+        if(d<this.cohRadius){
+          cohForce=cohForce.add(other.pos);cohCount++;
+        }
+        if(d<this.aliRadius){
+          aliForce=aliForce.add(other.vel);aliCount++;
+        }
+      }
+      let accel=new V();
+      if(this.sepOn&&sepCount>0){
+        const s=sepForce.div(sepCount).norm().mul(this.maxAccel);
+        accel=accel.add(s.mul(this.sepWeight));
+        b._sepF=s;
+      }else b._sepF=new V();
+      if(this.cohOn&&cohCount>0){
+        const center=cohForce.div(cohCount);
+        const c=center.sub(b.pos).norm().mul(this.maxAccel);
+        accel=accel.add(c.mul(this.cohWeight));
+        b._cohF=c;
+      }else b._cohF=new V();
+      if(this.aliOn&&aliCount>0){
+        const avgVel=aliForce.div(aliCount);
+        const a2=avgVel.sub(b.vel).norm().mul(this.maxAccel);
+        accel=accel.add(a2.mul(this.aliWeight));
+        b._aliF=a2;
+      }else b._aliF=new V();
+      b.vel=b.vel.add(accel.mul(dt));
+      if(b.vel.len()>this.maxSpeed)b.vel=b.vel.norm().mul(this.maxSpeed);
+      b.pos=b.pos.add(b.vel.mul(dt));
+      b.ori=Math.atan2(b.vel.y,b.vel.x);
+      wrapPos(b.pos);
+    }
+  }
+  draw(){
+    drawGrid();
+    for(const b of this.boids){
+      if(this.showForces){
+        if(b._sepF&&b._sepF.len()>1)drawArrow(b.pos,b.pos.add(b._sepF.mul(0.15)),'#ff4466aa',1.5);
+        if(b._cohF&&b._cohF.len()>1)drawArrow(b.pos,b.pos.add(b._cohF.mul(0.15)),'#4488ffaa',1.5);
+        if(b._aliF&&b._aliF.len()>1)drawArrow(b.pos,b.pos.add(b._aliF.mul(0.15)),'#44ff88aa',1.5);
+      }
+      drawAgent(b.pos,b.ori,'#88ccee',8);
+    }
+    drawLabel(14,20,`boids: ${this.boids.length}  |  Sep: ${this.sepOn?'ON':'OFF'} (w=${this.sepWeight})  |  Coh: ${this.cohOn?'ON':'OFF'} (w=${this.cohWeight})  |  Ali: ${this.aliOn?'ON':'OFF'} (w=${this.aliWeight})`);
+    if(this.showForces) drawLabel(14,36,'Forces: red=Separation  blue=Cohesion  green=Alignment','#888');
+  }
+}
+
+// --- 15. Blending Problems (Stable Equilibria) ---
+class DemoBlendProblems {
+  constructor(){
+    this.reset();
+  }
+  reset(){
+    this.agent={pos:new V(150,H/2),ori:0,vel:new V()};
+    this.target=new V(W-100,H/2);
+    this.obstacles=[
+      {pos:new V(W/2,H/2-60),r:40},
+      {pos:new V(W/2,H/2+60),r:40}
+    ];
+    this.mode='blending';
+    this.maxAccel=200;this.maxSpeed=150;
+    this.avoidRadius=90;this.trail=[];
+    this._seekF=new V();this._avoidFs=[];this._totalF=new V();
+    this.stuckTime=0;
+  }
+  get title(){return 'Blending Problems — Stable Equilibria'}
+  get tag(){return 'Combining'}
+  get desc(){return '<b>Blending</b>: 두 장애물의 회피력이 <b>상쇄</b> → 안정 균형점(Stable Equilibrium)에 갇힘. <b>Arbitration</b>: 우선순위로 하나만 선택 → 통과 성공. <b>Basin of Attraction</b>(끌림 영역) 시각화.'}
+  getControls(){return[
+    {id:'mode',label:this.mode==='blending'?'Mode: Blending (stuck!)':'Mode: Arbitration (passes!)',on:this.mode==='arbitration',
+     toggle:()=>{this.mode=this.mode==='blending'?'arbitration':'blending';this.reset();}},
+    {id:'reset',label:'Reset',toggle:()=>this.reset()}
+  ]}
+  click(x,y){this.reset();this.target=new V(x,y);}
+  update(dt){
+    const a=this.agent;
+    const seekDir=this.target.sub(a.pos);
+    const seekAccel=seekDir.norm().mul(this.maxAccel*0.6);
+    this._seekF=seekAccel;
+    this._avoidFs=[];
+    if(this.mode==='blending'){
+      // Blending: weighted sum of all forces
+      let totalAvoid=new V();
+      for(const obs of this.obstacles){
+        const toObs=obs.pos.sub(a.pos);
+        const dist=toObs.len();
+        if(dist<this.avoidRadius&&dist>1){
+          const strength=this.maxAccel*((this.avoidRadius-dist)/this.avoidRadius)*1.5;
+          const avoidF=toObs.norm().mul(-strength);
+          totalAvoid=totalAvoid.add(avoidF);
+          this._avoidFs.push({from:a.pos.clone(),force:avoidF});
+        }
+      }
+      const total=seekAccel.add(totalAvoid);
+      this._totalF=total;
+      a.vel=a.vel.add(total.mul(dt));
+    } else {
+      // Arbitration: highest priority avoidance wins, else seek
+      let closestObs=null;let closestDist=Infinity;
+      for(const obs of this.obstacles){
+        const d=V.dist(a.pos,obs.pos);
+        if(d<this.avoidRadius&&d<closestDist){closestDist=d;closestObs=obs;}
+      }
+      let accel;
+      if(closestObs){
+        const toObs=closestObs.pos.sub(a.pos);
+        const strength=this.maxAccel*1.2;
+        accel=toObs.norm().mul(-strength);
+        // Add slight perpendicular bias to break symmetry
+        const perp=new V(-toObs.y,toObs.x).norm().mul(this.maxAccel*0.3);
+        accel=accel.add(perp);
+        this._avoidFs=[{from:a.pos.clone(),force:accel}];
+        this._totalF=accel;
+      } else {
+        accel=seekAccel;
+        this._avoidFs=[];
+        this._totalF=accel;
+      }
+      a.vel=a.vel.add(accel.mul(dt));
+    }
+    // Drag for stability
+    a.vel=a.vel.mul(Math.pow(0.3,dt));
+    if(a.vel.len()>this.maxSpeed)a.vel=a.vel.norm().mul(this.maxSpeed);
+    a.pos=a.pos.add(a.vel.mul(dt));
+    a.ori=Math.atan2(a.vel.y,a.vel.x);
+    clampPos(a.pos,15);
+    this.trail.push(a.pos.clone());
+    if(this.trail.length>400)this.trail.shift();
+    // Detect stuck
+    if(a.vel.len()<5)this.stuckTime+=dt;else this.stuckTime=0;
+  }
+  draw(){
+    drawGrid();
+    // Basin of attraction visualization (blending mode)
+    if(this.mode==='blending'){
+      const bx=W/2,by=H/2;
+      ctx.save();ctx.fillStyle='#ff446608';
+      ctx.beginPath();ctx.ellipse(bx,by,this.avoidRadius*1.2,this.avoidRadius*0.8,0,0,Math.PI*2);ctx.fill();
+      ctx.strokeStyle='#ff446622';ctx.lineWidth=1;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.ellipse(bx,by,this.avoidRadius*1.2,this.avoidRadius*0.8,0,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);ctx.restore();
+      drawLabel(bx+this.avoidRadius*1.2+5,by,'Basin of Attraction','#ff4466');
+    }
+    // Avoid radii
+    for(const obs of this.obstacles){
+      drawCircleDashed(obs.pos.x,obs.pos.y,this.avoidRadius,'#ff884422',4);
+      ctx.beginPath();ctx.arc(obs.pos.x,obs.pos.y,obs.r,0,Math.PI*2);
+      ctx.fillStyle='#3a3a5a';ctx.fill();ctx.strokeStyle='#5a5a7a';ctx.lineWidth=1;ctx.stroke();
+    }
+    drawTrail(this.trail);
+    drawTarget(this.target);
+    // Force arrows
+    const a=this.agent;
+    drawArrow(a.pos,a.pos.add(this._seekF.mul(0.15)),'#00ff8866',1.5);
+    for(const af of this._avoidFs){
+      drawArrow(af.from,af.from.add(af.force.mul(0.15)),'#ff446688',1.5);
+    }
+    drawArrow(a.pos,a.pos.add(this._totalF.mul(0.12)),'#ffcc00',2);
+    drawAgent(a.pos,a.ori);
+    // Labels
+    const modeLabel=this.mode==='blending'?'BLENDING: avoid forces cancel out → STUCK':'ARBITRATION: one avoid selected → passes through';
+    const modeColor=this.mode==='blending'?'#ff4466':'#00ff88';
+    drawLabel(14,20,modeLabel,modeColor);
+    drawLabel(14,36,'Green arrow=Seek  |  Red arrow=Avoid  |  Yellow arrow=Total force','#888');
+    if(this.stuckTime>1.5&&this.mode==='blending'){
+      ctx.fillStyle='#ff446688';ctx.font='bold 16px Segoe UI,sans-serif';
+      ctx.fillText('STABLE EQUILIBRIUM — Agent is stuck!',W/2-160,H-30);
+    }
+  }
+}
+
+// ===== Demo Manager =====
+const demos = {
+  kSeek: new DemoKSeek(),
+  kArrive: new DemoKArrive(),
+  kWander: new DemoKWander(),
+  sSeek: new DemoSSeek(),
+  sArrive: new DemoSArrive(),
+  sAlign: new DemoSAlign(),
+  velMatch: new DemoVelocityMatch(),
+  pursue: new DemoPursue(),
+  faceLook: new DemoFaceLook(),
+  sWander: new DemoSWander(),
+  pathFollow: new DemoPathFollow(),
+  collisionAvoid: new DemoCollisionAvoid(),
+  obstacle: new DemoObstacle(),
+  flocking: new DemoFlocking(),
+  blendProblems: new DemoBlendProblems()
+};
+
+const DD={
+kSeek:`<h3>Kinematic Seek & Flee</h3>
+<span class="etag">⭐ 시험</span>
+<p><b>Seek</b>는 가장 기본적인 이동 알고리즘이다. 타겟까지의 <b>방향 벡터</b>를 구하고, 정규화한 뒤 <b>maxSpeed</b>를 곱하여 항상 최대 속도로 이동한다.</p>
+<div class="sub">의사코드</div>
+<div class="fm">velocity = target.position - character.position
+velocity.normalize()
+velocity *= maxSpeed</div>
+<p><b>Flee</b>는 Seek에서 빼기 순서만 반전하면 된다:</p>
+<div class="fm">velocity = character.position - target.position</div>
+<div class="sub">getNewOrientation ⭐</div>
+<div class="fm">if velocity.length() > 0:
+  return atan2(-velocity.x, velocity.z)
+else:
+  return current</div>
+<p>atan2(<b>-x, z</b>)인 이유: 교재는 양의 Z축 기준 3D 좌표계(X-Z 평면)이기 때문이다. 일반 2D 수학의 atan2(y,x)와 다르므로 주의. (이 시각화는 2D 화면 좌표를 사용하므로 내부적으로 atan2(y,x)로 구현되어 있으나, <b>시험에서는 교재 표기 atan2(-x, z)</b>를 사용할 것.)</p>
+<div class="warn">⚠️ <b>Overshoot 문제</b>: 항상 maxSpeed로 이동하므로 타겟에 도달해도 멈출 수 없다. 목표를 지나친 뒤 돌아오고, 또 지나치는 <b>진동(oscillation)</b>이 반복된다.</div>
+<div class="qt">"Seek는 항상 최대 속도로만 달린다. 감속이 불가능하여 overshoot가 발생한다."</div>`,
+
+kArrive:`<h3>Kinematic Arrive</h3>
+<span class="etag">⭐ 시험</span>
+<p>Seek의 <b>overshoot 문제를 해결</b>한다. <b>만족 반경(satisfaction radius)</b> 안에 들어오면 정지하고, 거리에 비례하여 속도를 줄인다.</p>
+<div class="sub">핵심 로직</div>
+<div class="fm">if distance < radius:
+  return null  // 정지!
+velocity = direction / timeToTarget
+if velocity.length() > maxSpeed:
+  velocity = normalize(velocity) * maxSpeed</div>
+<div class="kp"><b>timeToTarget</b> (기본 0.25초): 속도 스케일링 용도. 거리를 이 값으로 나누므로, 가까워지면 속도가 자연스럽게 줄어든다. 값이 작을수록 더 빠르게 감속.</div>
+<div class="warn">⚠️ <b>시험 포인트</b>: 감속하는 것처럼 보이지만, 이는 가속도가 아닌 <b>알고리즘적 매 프레임 조정</b>이므로 여전히 Kinematic 알고리즘에 해당한다.</div>
+<div class="sub">Seek vs Arrive 비교</div>
+<p>• Seek: 항상 maxSpeed → overshoot 발생<br>• Arrive: 거리 비례 감속 → 만족 반경 내 정지</p>
+<div class="qt">"실제로 그 시간에 도착하는 건 아니고, 속도 스케일링 용도이다."</div>`,
+
+kWander:`<h3>Kinematic Wander</h3>
+<p>랜덤하게 방향을 바꾸며 <b>배회</b>하는 알고리즘. 현재 방향으로 maxSpeed로 전진하면서, 매 프레임 랜덤 회전을 적용한다.</p>
+<div class="sub">핵심 로직</div>
+<div class="fm">velocity = maxSpeed * orientation.asVector()
+rotation = maxRotation * randomBinomial()</div>
+<div class="kp"><b>randomBinomial()</b> = random() - random()<br>[-1, 1] 범위에서 <b>0 근처에 확률이 집중</b>된 분포. 대부분 약간만 방향을 틀고, 가끔 크게 돌아간다.</div>
+<p>생동감 있는 NPC, 물고기/새 떼 등 지속적 움직임이 필요한 개체에 적합하다.</p>
+<div class="qt">"random()은 0~1 균일 분포인데, 두 개를 빼면 0 근처에 집중된 분포가 된다. 자연스러운 배회 패턴이 만들어진다."</div>`,
+
+sSeek:`<h3>Steering Seek — Orbiting Problem</h3>
+<span class="etag">⭐ 시험</span>
+<p>Kinematic Seek와 달리 <b>velocity가 아닌 acceleration(가속도)</b>을 출력한다. 속도가 점진적으로 변하므로 더 자연스럽다.</p>
+<div class="sub">의사코드</div>
+<div class="fm">result.linear = target.position - character.position
+result.linear.normalize()
+result.linear *= maxAcceleration</div>
+<div class="sub">업데이트 ⭐</div>
+<div class="fm">velocity += steering.linear * time
+if velocity.length() > maxSpeed:
+  velocity = normalize(velocity) * maxSpeed
+position += velocity * time</div>
+<p>maxSpeed <b>클리핑</b>은 getSteering() 안이 아니라 <b>업데이트 코드</b>에서 수행한다.</p>
+<div class="warn">⚠️ <b>Orbiting Problem</b>: Seek는 감속하지 않으므로, 목표 근처에서 가속도가 구심력처럼 작용하여 <b>궤도를 도는 원운동</b>이 발생한다.<br><br>• <b>Drag 없음</b>: 목표 주위를 영구 공전<br>• <b>Drag 있음</b>: 나선형으로 수렴하여 도달</div>
+<div class="qt">"마치 인공위성이 지구 주위를 도는 것과 같다. drag을 넣으면 나선형으로 들어간다."</div>`,
+
+sArrive:`<h3>Steering Arrive — Two Radii</h3>
+<span class="etag">⭐⭐ 시험 매우 중요</span>
+<p><b>두 개의 반경</b>을 사용하여 자연스러운 감속 도착을 구현한다.</p>
+<div class="kp"><b>targetRadius</b> (초록): 이 안에 들어오면 <b>정지</b><br><b>slowRadius</b> (노란): 이 안에 들어오면 <b>감속 시작</b></div>
+<div class="sub">속도 계산 ⭐</div>
+<div class="fm">if distance > slowRadius:
+  targetSpeed = maxSpeed        // 전속력
+else:
+  targetSpeed = maxSpeed * distance / slowRadius
+                                // 선형 감속</div>
+<div class="sub">가속도 계산 ⭐</div>
+<div class="fm">acceleration = (targetVelocity - currentVelocity)
+             / timeToTarget</div>
+<p>현재 속도에서 목표 속도까지의 차이를 timeToTarget로 나눈 것이 가속도이다. 목표 속도가 0에 가까워지면 자연스럽게 감속 가속도가 나온다.</p>
+<div class="qt">"그래프를 그리면 slowRadius에서 꺾이는 선형 그래프가 된다. targetRadius 안에 들어오면 완전히 멈춘다."</div>`,
+
+sAlign:`<h3>Align (방향 정렬)</h3>
+<span class="etag">⭐⭐ 시험 매우 중요</span>
+<p>Arrive의 <b>회전 버전</b>. 목표 orientation으로 부드럽게 회전한다. 두 반경(targetRadius, slowRadius)을 <b>라디안</b>으로 사용한다.</p>
+<div class="sub">핵심: mapToRange ⭐</div>
+<div class="fm">mapToRange(θ) = ((θ + π) mod 2π) − π</div>
+<p>결과를 <b>[-π, π]</b>로 매핑하여 <b>최단 회전 경로</b>를 보장한다.</p>
+<p>예: 현재 350°, 목표 10° → 단순 뺄셈은 -340°(거의 한바퀴)이지만, mapToRange 적용 시 <b>+20°만 회전</b>.</p>
+<div class="sub">방향 부여</div>
+<div class="fm">targetRotation *= rotation / rotationSize</div>
+<p>rotationSize는 절대값(양수)이므로, 원래 rotation의 <b>부호(±1)를 곱하여 회전 방향</b>을 결정한다.</p>
+<div class="sub">Arrive vs Align 비교 ⭐</div>
+<p>• Arrive: <b>position</b> → linear acceleration<br>• Align: <b>orientation</b> → angular acceleration<br>• Align만 <b>mapToRange</b> 필요 (각도의 주기성)</p>
+<div class="qt">"시계/반시계 중 짧은 쪽으로 돈다."</div>`,
+
+velMatch:`<h3>Velocity Matching (속도 매칭)</h3>
+<p>위치가 아닌 <b>속도를 일치</b>시키는 알고리즘. 목표의 velocity와 동일한 속도로 맞추려 한다.</p>
+<div class="sub">의사코드</div>
+<div class="fm">result.linear = target.velocity - character.velocity
+result.linear /= timeToTarget
+// maxAcceleration으로 클리핑</div>
+<p>단독으로는 거의 사용하지 않고, <b>Flocking</b>에서 <b>Alignment</b>(정렬) 행동으로 사용한다. 주변 개체들의 평균 속도에 맞추는 역할.</p>
+<div class="kp"><b>Variable Matching 원칙</b>: 위치, 속도, 방향을 동시에 매칭하면 충돌이 생길 수 있다. 각 behavior를 <b>독립적으로 계산</b>한 후 나중에 조합해야 한다.</div>
+<div class="qt">"Velocity Matching은 위치가 아닌 속도를 맞추는 것이다. 단독으로는 잘 안 쓰이고, Flocking에서 Alignment 행동으로 사용된다."</div>`,
+
+pursue:`<h3>Pursue & Evade</h3>
+<span class="etag">⭐ 시험</span>
+<p><b>Pursue</b>: 타겟의 <b>미래 위치를 예측</b>하여 Seek에 위임하는 위임(Delegated) 행동.</p>
+<div class="sub">핵심: 예측 시간 계산</div>
+<div class="fm">if speed <= distance / maxPrediction:
+  prediction = maxPrediction
+else:
+  prediction = distance / speed
+// 미래 위치로 Seek 위임
+Seek.target = target.position
+            + target.velocity * prediction</div>
+<p>자신의 속도가 충분하면 짧은 예측, 느리면 maxPrediction 사용.</p>
+<div class="kp"><b>Evade</b>: Pursue와 동일하되 Seek 대신 <b>Flee에 위임</b>한다. 미래 위치를 예측하여 그 방향으로부터 도주.</div>
+<div class="sub">위임(Delegation) 패턴 ⭐</div>
+<p>1. 새로운 목표(미래 위치)를 계산<br>2. 기본 행동(Seek/Flee)에 위임</p>
+<div class="qt">"축구에서 패스할 때 사람이 있는 곳이 아니라 사람이 갈 곳으로 공을 차는 것과 같다."</div>`,
+
+faceLook:`<h3>Face & LookWhereYoureGoing</h3>
+<span class="etag">⭐ 시험</span>
+<p>둘 다 <b>Align에 위임</b>하지만 입력이 다르다.</p>
+<div class="sub">Face</div>
+<div class="fm">direction = target.position - character.position
+Align.target.orientation = atan2(-direction.x, direction.z)
+return Align.getSteering()</div>
+<p>타겟 <b>위치(position)</b> → orientation으로 변환 → Align 위임. FPS 게임에서 적을 조준하거나, 이동 방향과 조준 방향이 다른 경우 사용.</p>
+<div class="sub">LookWhereYoureGoing</div>
+<div class="fm">Align.target.orientation = atan2(
+  -character.velocity.x, character.velocity.z)
+return Align.getSteering()</div>
+<p>자신의 <b>속도(velocity)</b> 방향 → orientation → Align 위임. 자동차가 커브를 틀 때처럼 부드럽게 회전.</p>
+<div class="kp"><b>Kinematic과의 차이</b>: Kinematic은 getNewOrientation으로 방향을 <b>즉시</b> 변경하지만, LookWhereYoureGoing은 Align을 통해 <b>점진적으로</b> 회전한다.</div>
+<p style="font-size:11px;color:#666">※ 의사코드의 atan2(-x, z)는 교재의 3D 좌표계 표기. 시각화 내부는 2D 화면 좌표 atan2(y,x)로 구현.</p>`,
+
+sWander:`<h3>Steering Wander — Circle Method</h3>
+<span class="etag">⭐ 시험</span>
+<p>캐릭터 전방에 <b>원(circle)</b>을 놓고, 원 위의 랜덤 지점을 목표로 설정하여 <b>Seek에 위임</b>한다.</p>
+<div class="sub">파라미터</div>
+<p>• <b>wanderOffset</b>: 캐릭터에서 원 중심까지의 거리<br>• <b>wanderRadius</b>: 원의 반지름 (랜덤성 조절)<br>• <b>wanderRate</b>: 프레임당 최대 방향 변화량</p>
+<div class="sub">의사코드</div>
+<div class="fm">wanderOrientation += randomBinomial() * wanderRate
+target = character.position
+       + wanderOffset * orientation.asVector()
+target += wanderRadius * targetOrientation.asVector()
+return Seek.getSteering()</div>
+<div class="kp"><b>원이 크면</b> → 크게 방향을 틀고 (활발한 배회)<br><b>원이 작으면</b> → 조금만 튼다 (차분한 배회)</div>
+<div class="qt">"Kinematic Wander는 랜덤 회전이라 불규칙했는데, Steering Wander는 전방의 원 위를 목표로 하기 때문에 훨씬 부드럽다."</div>`,
+
+pathFollow:`<h3>Path Following (경로 추종)</h3>
+<span class="etag">⭐ 시험</span>
+<div class="sub">Chase-the-Rabbit</div>
+<p>1. 경로 위에서 현재 위치의 <b>가장 가까운 점</b>을 찾는다<br>2. 그 점에서 경로를 따라 <b>offset만큼 앞선 지점</b>을 목표로 설정<br>3. <b>Seek에 위임</b></p>
+<div class="sub">Predictive Path Following</div>
+<p>1. 현재 velocity로 <b>미래 위치</b>를 예측<br>2. 미래 위치에서 경로 위 가장 가까운 점을 찾는다<br>3. 그 점에서 offset만큼 앞선 지점 → Seek 위임</p>
+<div class="warn">⚠️ <b>Predictive의 문제점</b>: 복잡한 커브에서 미래 위치가 커브를 건너뛰어 <b>경로 생략</b>이 발생할 수 있다. (레이싱 트랙 등)</div>
+<div class="qt">"마치 경주견 앞에 토끼 인형을 매달아 놓은 것과 같다."</div>`,
+
+collisionAvoid:`<h3>Collision Avoidance (충돌 회피)</h3>
+<span class="etag">⭐ 시험</span>
+<p><b>움직이는 캐릭터</b> 간의 충돌을 피한다. Obstacle Avoidance(정적 벽)와 다른 알고리즘이다.</p>
+<div class="sub">알고리즘</div>
+<p>1. 주변 캐릭터에 대해 <b>closest approach time</b>(가장 근접하는 시점) 계산<br>2. 그 시점의 거리가 충돌 범위 내이면 <b>회피 가속도</b> 적용<br>3. 가장 가까운 위협에 대해서만 회피</p>
+<div class="kp"><b>반각 원뿔(Half-Angle Cone)</b>: 교재에서 소개하는 감지 방식. 이 데모에서는 <b>closest approach time</b> 방식으로 구현하였으며, 원뿔은 감지 방향을 시각적으로 표현한 것이다.</div>
+<div class="warn">⚠️ <b>Panic 문제</b>: 두 캐릭터가 정면으로 마주보며 접근 시, 같은 방향으로 회피하면 또 마주침. 해결: 회피에 <b>랜덤성 추가</b> 또는 '항상 오른쪽으로 비킨다' 같은 규칙.</div>
+<div class="qt">"복도에서 사람과 마주쳤을 때 같은 쪽으로 비키면 또 마주치는 것과 같다."</div>`,
+
+obstacle:`<h3>Obstacle Avoidance — Ray Casting</h3>
+<span class="etag">⭐ 시험</span>
+<p>고정된 <b>벽/장애물</b>을 회피한다. <b>레이(ray)</b>를 쏘아 충돌을 감지한다.</p>
+<div class="sub">알고리즘</div>
+<div class="fm">ray = velocity.normalize() * lookAhead
+collision = raycast(position, ray)
+if collision:
+  target = collision.point
+         + collision.normal * avoidDistance
+  return Seek.getSteering()</div>
+<div class="warn">⚠️ <b>avoidDistance > 캐릭터 반경</b>이어야 한다. 아니면 벽에 부딪힘.</div>
+<div class="sub">레이 배치 방법 ⭐</div>
+<p>• <b>Single Ray</b>: 단순하지만 벽 평행 시 감지 불가<br>• <b>Triple Ray (Fan)</b>: 넓은 감지, 연산량 증가<br>• <b>Whiskers</b>: 전방+측면, 비스듬한 벽에 약함<br>• <b>Parallel Side</b>: 캐릭터 폭 감지 가능</p>
+<div class="warn">⚠️ <b>코너 트랩(Corner Trap)</b>: 코너에서 왼쪽 레이 → '오른쪽으로', 오른쪽 레이 → '왼쪽으로' 지시하여 <b>좌우 진동</b>에 갇힘. 뒤로 후퇴 또는 한쪽 우선 등의 추가 로직 필요.</div>
+<div class="qt">"어떤 레이 구성이 최적인지 딱 정해진 룰은 없다(no hard and fast rule)."</div>`,
+
+flocking:`<h3>Flocking (군집 행동)</h3>
+<span class="etag">⭐⭐ 시험 매우 중요</span>
+<p>Craig Reynolds(1987) <b>Boids</b>. 세 가지 행동의 <b>Blending(가중합)</b>으로 구현한다.</p>
+<div class="kp"><b>Separation</b> (빨강): 가까운 이웃에게서 멀어짐 → 충돌 방지<br><b>Cohesion</b> (파랑): 이웃 중심으로 이동 → 무리 유지<br><b>Alignment</b> (초록): 이웃 속도에 맞춤 → 같은 방향 (Velocity Matching)</div>
+<div class="warn">⚠️ <b>우선순위</b>: Separation > Cohesion > Alignment<br>Separation이 가장 중요 — 부딪히면 안 되므로.</div>
+<div class="sub">Neighborhood (이웃 영역)</div>
+<p>일정 <b>반경</b> 내의 캐릭터만 이웃으로 고려. <b>Angular cut-off</b>(부채꼴)이 권장되지만, 실제로는 <b>단순 반경</b>이 가장 많이 쓰인다.</p>
+<div class="sub">Blending 공식</div>
+<div class="fm">result = w_sep * separation
+       + w_coh * cohesion
+       + w_ali * alignment</div>
+<div class="qt">"새 떼나 물고기 떼의 움직임을 3가지 규칙으로 설명한다."</div>`,
+
+blendProblems:`<h3>Blending Problems — Stable Equilibria</h3>
+<span class="etag">⭐⭐ 시험 매우 중요</span>
+<p>여러 Steering Behavior를 <b>가중합(Blending)</b>으로 결합할 때 발생하는 문제점들.</p>
+<div class="sub">Blending의 문제점 ⭐</div>
+<p>1. <b>안정 균형점(Stable Equilibria)</b>: 반대 방향 행동이 상쇄 → 멈춤<br>2. <b>끌림 영역(Basin of Attraction)</b>: 균형점 주변 영역, 빠져나오기 어려움<br>3. <b>근시안적(Near-sightedness)</b>: 주변만 보고 전체 파악 못함<br>4. <b>디버깅 어려움</b>: 여러 행동이 섞여 원인 파악 곤란</p>
+<div class="kp"><b>안정 균형점</b> = 공이 골짜기에 빠진 것 (밀어도 돌아옴)<br><b>불안정 균형점</b> = 산 꼭대기에 공 (살짝 밀면 굴러감)</div>
+<div class="sub">Arbitration (대안) ⭐</div>
+<p>Blending 대신 <b>우선순위</b>에 따라 <b>하나의 행동만 선택</b>. 장애물 회피 > 목표 추적 순으로 판단.</p>
+<div class="sub">Blending vs Arbitration ⭐</div>
+<p>• <b>Blending</b>: 부드러운 결합, 균형점 문제<br>• <b>Arbitration</b>: 명확한 우선순위, 전환 시 끊김 가능</p>
+<div class="qt">"안정 균형점은 캐릭터가 갇혀서 못 움직이게 된다. Arbitration은 하나만 실행하므로 이 문제가 없다."</div>`
+};
+
+function switchDemo(key){
+  currentDemo = demos[key];
+  document.getElementById('demo-title').textContent = currentDemo.title;
+  document.getElementById('demo-tag').textContent = currentDemo.tag;
+  document.getElementById('desc').innerHTML = currentDemo.desc;
+  document.getElementById('detail').innerHTML = DD[key]||'';
+  document.getElementById('detail').scrollTop = 0;
+  document.querySelectorAll('#sidebar button').forEach(b=>b.classList.remove('active'));
+  document.querySelector(`#sidebar button[data-demo="${key}"]`).classList.add('active');
+  renderControls();
+}
+
+function renderControls(){
+  const cont = document.getElementById('controls');
+  cont.innerHTML='';
+  const ctrls = currentDemo.getControls();
+  for(const c of ctrls){
+    const btn = document.createElement('button');
+    btn.textContent = c.label;
+    if(c.on) btn.classList.add('on');
+    btn.onclick=()=>{c.toggle();renderControls();};
+    cont.appendChild(btn);
+  }
+}
+
+// Sidebar click
+document.querySelectorAll('#sidebar button').forEach(btn=>{
+  btn.addEventListener('click',()=>switchDemo(btn.dataset.demo));
+});
+
+// Detail panel toggle
+document.getElementById('toggle-detail').addEventListener('click',()=>{
+  const d=document.getElementById('detail');
+  const btn=document.getElementById('toggle-detail');
+  d.classList.toggle('closed');
+  btn.textContent=d.classList.contains('closed')?'▶':'◀';
+});
+
+// Canvas click
+canvas.addEventListener('click',(e)=>{
+  const rect=canvas.getBoundingClientRect();
+  const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+  const x=(e.clientX-rect.left)*sx, y=(e.clientY-rect.top)*sy;
+  if(currentDemo)currentDemo.click(x,y);
+});
+
+canvas.addEventListener('mousemove',(e)=>{
+  const rect=canvas.getBoundingClientRect();
+  const sx=canvas.width/rect.width, sy=canvas.height/rect.height;
+  mouse.x=(e.clientX-rect.left)*sx;mouse.y=(e.clientY-rect.top)*sy;
+});
+
+// ===== Main Loop =====
+let lastTime=0;
+function loop(time){
+  const dt=Math.min((time-lastTime)/1000,0.05);
+  lastTime=time;
+  ctx.clearRect(0,0,W,H);
+  if(currentDemo){
+    try{
+      currentDemo.update(dt);
+      currentDemo.draw();
+    }catch(e){
+      ctx.fillStyle='#ff4466';ctx.font='14px Segoe UI,sans-serif';
+      ctx.fillText('Error: '+e.message,20,H/2);
+    }
+  }
+  requestAnimationFrame(loop);
+}
+
+switchDemo('kSeek');
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
