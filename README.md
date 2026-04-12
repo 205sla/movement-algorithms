@@ -8,7 +8,7 @@
 
 **https://movement-algorithms.205.kr/**
 
-또는 `movement_algorithms_visualization.html`을 브라우저에서 직접 열어도 됩니다. (별도 설치 불필요, 단일 HTML 파일)
+또는 `index.html`을 브라우저에서 직접 열어도 됩니다. (별도 설치 불필요, 단일 HTML 파일)
 
 ## 포함된 알고리즘 (16개 데모)
 
@@ -58,4 +58,4 @@
 
 - Vanilla JavaScript + HTML5 Canvas
 - 외부 라이브러리 없음 (zero dependencies)
-- 단일 HTML 파일로 동작 — `movement_algorithms_visualization.html`을 브라우저에서 열기만 하면 됨
+- 단일 HTML 파일로 동작 — `index.html`을 브라우저에서 열기만 하면 됨
